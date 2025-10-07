@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { GraduationCap, ArrowLeft, Loader2, Send } from "lucide-react";
 
 const EssayCorrection = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { type } = useParams<{ type: string }>();
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
@@ -27,7 +28,16 @@ const EssayCorrection = () => {
         setUser(session.user);
       }
     });
-  }, [navigate]);
+
+    // Check if there's essay data passed from Dashboard
+    const state = location.state as any;
+    if (state?.essayData && state?.correction) {
+      setTitle(state.essayData.title || "");
+      setTheme(state.essayData.theme || "");
+      setContent(state.essayData.content || "");
+      setCorrection(state.correction);
+    }
+  }, [navigate, location]);
 
   const handleSubmit = async () => {
     if (!content.trim()) {

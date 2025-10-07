@@ -71,6 +71,35 @@ const Settings = () => {
     });
   };
 
+  const handleSubscribe = (planName: string) => {
+    toast({
+      title: "Em desenvolvimento",
+      description: `A assinatura do plano ${planName} será implementada em breve com integração de pagamento.`,
+    });
+  };
+
+  const handleDeleteAccount = () => {
+    toast({
+      title: "Atenção",
+      description: "Tem certeza que deseja excluir sua conta? Esta ação é irreversível.",
+      variant: "destructive",
+    });
+  };
+
+  const handleSavePreferences = () => {
+    toast({
+      title: "Preferências salvas!",
+      description: "Suas preferências foram atualizadas com sucesso.",
+    });
+  };
+
+  const handleExportData = () => {
+    toast({
+      title: "Exportação iniciada",
+      description: "Seus dados serão exportados e enviados para o seu email.",
+    });
+  };
+
   const plans = [
     {
       name: "Free",
@@ -205,7 +234,7 @@ const Settings = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Ações irreversíveis que afetam permanentemente sua conta.
               </p>
-              <Button variant="destructive" size="sm">
+              <Button variant="destructive" size="sm" onClick={handleDeleteAccount}>
                 Excluir Conta
               </Button>
             </Card>
@@ -253,6 +282,7 @@ const Settings = () => {
                       className="w-full"
                       variant={plan.current ? "outline" : plan.popular ? "default" : "secondary"}
                       disabled={plan.current}
+                      onClick={() => !plan.current && handleSubscribe(plan.name)}
                     >
                       {plan.buttonText}
                     </Button>
@@ -267,10 +297,24 @@ const Settings = () => {
                 Seu pagamento é processado de forma segura. Cancele a qualquer momento.
               </p>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => toast({
+                    title: "Em desenvolvimento",
+                    description: "O gerenciamento de pagamentos será implementado em breve.",
+                  })}
+                >
                   Gerenciar Pagamento
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => toast({
+                    title: "Em desenvolvimento",
+                    description: "O histórico de faturas será implementado em breve.",
+                  })}
+                >
                   Histórico de Faturas
                 </Button>
               </div>
@@ -311,7 +355,7 @@ const Settings = () => {
                 </div>
 
                 <div className="pt-4 border-t">
-                  <Button className="w-full">
+                  <Button className="w-full" onClick={handleSavePreferences}>
                     Salvar Preferências
                   </Button>
                 </div>
@@ -322,13 +366,21 @@ const Settings = () => {
               <h3 className="font-semibold mb-4">Privacidade e Dados</h3>
               
               <div className="space-y-4">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start" onClick={handleExportData}>
                   Exportar Meus Dados
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => window.open('https://docs.lovable.dev', '_blank')}
+                >
                   Política de Privacidade
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => window.open('https://docs.lovable.dev', '_blank')}
+                >
                   Termos de Uso
                 </Button>
               </div>
