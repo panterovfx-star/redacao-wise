@@ -1,0 +1,343 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { GraduationCap, ArrowLeft, User, CreditCard, Settings as SettingsIcon, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+
+const Settings = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [email, setEmail] = useState("");
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+
+      setEmail(session.user.email || "");
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData);
+      }
+
+      setLoading(false);
+    };
+
+    loadProfile();
+  }, [navigate]);
+
+  const handleUpdateProfile = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ email })
+      .eq('user_id', session.user.id);
+
+    if (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o perfil.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Perfil atualizado!",
+      description: "Suas informações foram salvas com sucesso.",
+    });
+  };
+
+  const plans = [
+    {
+      name: "Free",
+      price: "R$ 0",
+      period: "/mês",
+      features: [
+        "1 correção por dia",
+        "Correção ENEM e Vestibular",
+        "Análise básica",
+      ],
+      current: profile?.plan === "free",
+      buttonText: "Plano Atual",
+    },
+    {
+      name: "Standard",
+      price: "R$ 29,90",
+      period: "/mês",
+      features: [
+        "10 correções por dia",
+        "Correção ENEM e Vestibular",
+        "Análise detalhada",
+        "Histórico completo",
+        "Suporte prioritário",
+      ],
+      current: profile?.plan === "standard",
+      buttonText: profile?.plan === "standard" ? "Plano Atual" : "Assinar",
+      popular: true,
+    },
+    {
+      name: "Pro",
+      price: "R$ 59,90",
+      period: "/mês",
+      features: [
+        "Correções ilimitadas",
+        "Correção ENEM e Vestibular",
+        "Análise completa com IA avançada",
+        "Histórico ilimitado",
+        "Suporte VIP 24/7",
+        "Relatórios de evolução",
+        "Simulados exclusivos",
+      ],
+      current: profile?.plan === "pro",
+      buttonText: profile?.plan === "pro" ? "Plano Atual" : "Assinar",
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background">
+      <nav className="border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </Button>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-hero rounded-lg flex items-center justify-center">
+              <GraduationCap className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <span className="font-semibold">Configurações</span>
+          </div>
+        </div>
+      </nav>
+
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Configurações da Conta</h1>
+          <p className="text-muted-foreground">
+            Gerencie seu perfil, plano e preferências
+          </p>
+        </div>
+
+        <Tabs defaultValue="profile" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 max-w-md">
+            <TabsTrigger value="profile">
+              <User className="w-4 h-4 mr-2" />
+              Perfil
+            </TabsTrigger>
+            <TabsTrigger value="plan">
+              <CreditCard className="w-4 h-4 mr-2" />
+              Plano
+            </TabsTrigger>
+            <TabsTrigger value="settings">
+              <SettingsIcon className="w-4 h-4 mr-2" />
+              Preferências
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="profile" className="space-y-6">
+            <Card className="p-6">
+              <h2 className="text-xl font-bold mb-6">Informações do Perfil</h2>
+              
+              <div className="space-y-4 max-w-md">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="seu@email.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="plan">Plano Atual</Label>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={profile?.plan === "pro" ? "default" : "secondary"} className="text-sm">
+                      {profile?.plan === "free" ? "Gratuito" : profile?.plan === "standard" ? "Standard" : "Pro"}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {profile?.daily_corrections_used || 0} correções usadas hoje
+                    </span>
+                  </div>
+                </div>
+
+                <Button onClick={handleUpdateProfile} className="w-full">
+                  Salvar Alterações
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="p-6 bg-destructive/5 border-destructive/20">
+              <h3 className="font-semibold text-destructive mb-2">Zona de Perigo</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Ações irreversíveis que afetam permanentemente sua conta.
+              </p>
+              <Button variant="destructive" size="sm">
+                Excluir Conta
+              </Button>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="plan" className="space-y-6">
+            <Card className="p-6">
+              <h2 className="text-xl font-bold mb-2">Escolha seu Plano</h2>
+              <p className="text-muted-foreground mb-6">
+                Selecione o plano que melhor atende suas necessidades
+              </p>
+
+              <div className="grid md:grid-cols-3 gap-6">
+                {plans.map((plan) => (
+                  <Card 
+                    key={plan.name}
+                    className={`p-6 relative ${
+                      plan.popular ? 'border-2 border-primary shadow-lg' : ''
+                    } ${plan.current ? 'bg-muted/50' : ''}`}
+                  >
+                    {plan.popular && (
+                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                        Mais Popular
+                      </Badge>
+                    )}
+                    
+                    <div className="text-center mb-6">
+                      <h3 className="text-lg font-bold mb-2">{plan.name}</h3>
+                      <div className="flex items-end justify-center gap-1 mb-1">
+                        <span className="text-3xl font-bold">{plan.price}</span>
+                        <span className="text-muted-foreground text-sm mb-1">{plan.period}</span>
+                      </div>
+                    </div>
+
+                    <ul className="space-y-3 mb-6">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-start gap-2 text-sm">
+                          <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <Button
+                      className="w-full"
+                      variant={plan.current ? "outline" : plan.popular ? "default" : "secondary"}
+                      disabled={plan.current}
+                    >
+                      {plan.buttonText}
+                    </Button>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <h3 className="font-semibold mb-2">Informações de Pagamento</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Seu pagamento é processado de forma segura. Cancele a qualquer momento.
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">
+                  Gerenciar Pagamento
+                </Button>
+                <Button variant="outline" size="sm">
+                  Histórico de Faturas
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <Card className="p-6">
+              <h2 className="text-xl font-bold mb-6">Preferências do Site</h2>
+              
+              <div className="space-y-6 max-w-md">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="notifications">Notificações por Email</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Receba atualizações sobre suas correções
+                    </p>
+                  </div>
+                  <Switch
+                    id="notifications"
+                    checked={emailNotifications}
+                    onCheckedChange={setEmailNotifications}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="darkmode">Modo Escuro</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Alterne entre tema claro e escuro
+                    </p>
+                  </div>
+                  <Switch
+                    id="darkmode"
+                    checked={darkMode}
+                    onCheckedChange={setDarkMode}
+                  />
+                </div>
+
+                <div className="pt-4 border-t">
+                  <Button className="w-full">
+                    Salvar Preferências
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <h3 className="font-semibold mb-4">Privacidade e Dados</h3>
+              
+              <div className="space-y-4">
+                <Button variant="outline" className="w-full justify-start">
+                  Exportar Meus Dados
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  Política de Privacidade
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  Termos de Uso
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default Settings;

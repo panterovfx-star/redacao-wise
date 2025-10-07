@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { GraduationCap, LogOut, FileText, TrendingUp, History, Shield } from "lucide-react";
+import { GraduationCap, LogOut, FileText, TrendingUp, History, Shield, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
 
@@ -101,6 +101,10 @@ const Dashboard = () => {
                 Admin
               </Button>
             )}
+            <Button onClick={() => navigate("/settings")} variant="ghost" size="sm">
+              <Settings className="w-4 h-4 mr-2" />
+              Configurações
+            </Button>
             <Button onClick={handleLogout} variant="outline" size="sm">
               <LogOut className="w-4 h-4 mr-2" />
               Sair
