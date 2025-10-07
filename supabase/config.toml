@@ -1,0 +1,4 @@
+project_id = "tdwxrgalpsrcxnxlzcmb"
+
+[functions.correct-essay]
+verify_jwt = true
