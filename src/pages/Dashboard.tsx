@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Tables } from "@/integrations/supabase/types";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -16,6 +17,25 @@ const Dashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    // Check for checkout success/cancel
+    const checkoutStatus = searchParams.get('checkout');
+    if (checkoutStatus === 'success') {
+      toast({
+        title: "Assinatura realizada!",
+        description: "Seu pagamento foi processado com sucesso. Aproveite seu novo plano!",
+      });
+      // Remove query param
+      setSearchParams({});
+    } else if (checkoutStatus === 'canceled') {
+      toast({
+        title: "Checkout cancelado",
+        description: "Você cancelou o processo de checkout.",
+        variant: "destructive",
+      });
+      // Remove query param
+      setSearchParams({});
+    }
+
     const loadUserData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       

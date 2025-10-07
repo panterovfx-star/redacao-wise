@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,20 +7,38 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { GraduationCap, ArrowLeft, User, CreditCard, Settings as SettingsIcon, Check } from "lucide-react";
+import { GraduationCap, ArrowLeft, User, CreditCard, Settings as SettingsIcon, Check, Crown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { useSubscription } from "@/hooks/use-subscription";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [email, setEmail] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const { status: subscriptionStatus, createCheckout, openCustomerPortal } = useSubscription();
+
+  const PLAN_PRICES: Record<string, string> = {
+    standard: 'price_1SFkWeE0zB1huP7q9QnjnTq8',
+    pro: 'price_1SFkWoE0zB1huP7qh4vZSf6G'
+  };
 
   useEffect(() => {
+    // Check for checkout status
+    const checkoutStatus = searchParams.get('checkout');
+    if (checkoutStatus === 'canceled') {
+      toast({
+        title: "Checkout cancelado",
+        description: "Você cancelou o processo de checkout. Tente novamente quando quiser!",
+      });
+      setSearchParams({});
+    }
+
     const loadProfile = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -71,11 +89,20 @@ const Settings = () => {
     });
   };
 
-  const handleSubscribe = (planName: string) => {
-    toast({
-      title: "Em desenvolvimento",
-      description: `A assinatura do plano ${planName} será implementada em breve com integração de pagamento.`,
-    });
+  const handleSubscribe = async (planName: string) => {
+    const planKey = planName.toLowerCase();
+    const priceId = PLAN_PRICES[planKey];
+    
+    if (!priceId) {
+      toast({
+        title: "Erro",
+        description: "Plano não encontrado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await createCheckout(priceId);
   };
 
   const handleDeleteAccount = () => {
@@ -110,8 +137,9 @@ const Settings = () => {
         "Correção ENEM e Vestibular",
         "Análise básica",
       ],
-      current: profile?.plan === "free",
-      buttonText: "Plano Atual",
+      current: subscriptionStatus.plan === "free",
+      buttonText: "Plano Gratuito",
+      disabled: true,
     },
     {
       name: "Standard",
@@ -124,8 +152,8 @@ const Settings = () => {
         "Histórico completo",
         "Suporte prioritário",
       ],
-      current: profile?.plan === "standard",
-      buttonText: profile?.plan === "standard" ? "Plano Atual" : "Assinar",
+      current: subscriptionStatus.plan === "standard",
+      buttonText: subscriptionStatus.plan === "standard" ? "Plano Atual" : "Assinar",
       popular: true,
     },
     {
@@ -142,8 +170,8 @@ const Settings = () => {
         "Relatórios de evolução",
         "Simulados exclusivos",
       ],
-      current: profile?.plan === "pro",
-      buttonText: profile?.plan === "pro" ? "Plano Atual" : "Assinar",
+      current: subscriptionStatus.plan === "pro",
+      buttonText: subscriptionStatus.plan === "pro" ? "Plano Atual" : "Assinar",
     },
   ];
 
@@ -215,13 +243,19 @@ const Settings = () => {
                 <div className="space-y-2">
                   <Label htmlFor="plan">Plano Atual</Label>
                   <div className="flex items-center gap-2">
-                    <Badge variant={profile?.plan === "pro" ? "default" : "secondary"} className="text-sm">
-                      {profile?.plan === "free" ? "Gratuito" : profile?.plan === "standard" ? "Standard" : "Pro"}
+                    <Badge variant={subscriptionStatus.plan === "pro" ? "default" : "secondary"} className="text-sm gap-1">
+                      {subscriptionStatus.plan === "pro" && <Crown className="w-3 h-3" />}
+                      {subscriptionStatus.plan === "free" ? "Gratuito" : subscriptionStatus.plan === "standard" ? "Standard" : "Pro"}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
                       {profile?.daily_corrections_used || 0} correções usadas hoje
                     </span>
                   </div>
+                  {subscriptionStatus.subscription_end && (
+                    <p className="text-xs text-muted-foreground">
+                      Renovação: {new Date(subscriptionStatus.subscription_end).toLocaleDateString('pt-BR')}
+                    </p>
+                  )}
                 </div>
 
                 <Button onClick={handleUpdateProfile} className="w-full">
@@ -282,8 +316,8 @@ const Settings = () => {
                     <Button
                       className="w-full"
                       variant={plan.current ? "outline" : plan.popular ? "default" : "secondary"}
-                      disabled={plan.current}
-                      onClick={() => !plan.current && handleSubscribe(plan.name)}
+                      disabled={plan.current || plan.disabled}
+                      onClick={() => !plan.current && !plan.disabled && handleSubscribe(plan.name)}
                     >
                       {plan.buttonText}
                     </Button>
@@ -295,30 +329,23 @@ const Settings = () => {
             <Card className="p-6">
               <h3 className="font-semibold mb-2">Informações de Pagamento</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Seu pagamento é processado de forma segura. Cancele a qualquer momento.
+                {subscriptionStatus.subscribed 
+                  ? "Gerencie sua assinatura e métodos de pagamento através do portal do cliente." 
+                  : "Seu pagamento é processado de forma segura através do Stripe."}
               </p>
-              <div className="flex gap-2">
+              {subscriptionStatus.subscribed ? (
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => toast({
-                    title: "Em desenvolvimento",
-                    description: "O gerenciamento de pagamentos será implementado em breve.",
-                  })}
+                  onClick={openCustomerPortal}
                 >
-                  Gerenciar Pagamento
+                  Gerenciar Assinatura
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => toast({
-                    title: "Em desenvolvimento",
-                    description: "O histórico de faturas será implementado em breve.",
-                  })}
-                >
-                  Histórico de Faturas
-                </Button>
-              </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Assine um plano acima para acessar o portal de gerenciamento.
+                </p>
+              )}
             </Card>
           </TabsContent>
 

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { GraduationCap, ArrowLeft, Loader2, Send, Upload, FileImage, Crown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useSubscription } from "@/hooks/use-subscription";
 
 const EssayCorrection = () => {
   const navigate = useNavigate();
@@ -20,10 +21,10 @@ const EssayCorrection = () => {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [correction, setCorrection] = useState<any>(null);
-  const [userPlan, setUserPlan] = useState<string>("free");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [extractingText, setExtractingText] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { status: subscriptionStatus } = useSubscription();
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -32,17 +33,6 @@ const EssayCorrection = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
-        
-        // Load user plan
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('plan')
-          .eq('user_id', session.user.id)
-          .single();
-        
-        if (profileData) {
-          setUserPlan(profileData.plan);
-        }
       }
     };
 
@@ -62,7 +52,7 @@ const EssayCorrection = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (userPlan !== "pro") {
+    if (subscriptionStatus.plan !== "pro") {
       toast({
         title: "Recurso Pro",
         description: "A leitura de imagens e PDFs está disponível apenas para usuários Pro.",
@@ -313,7 +303,7 @@ const EssayCorrection = () => {
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold">Sua Redação</h2>
-                {userPlan === "pro" && (
+                {subscriptionStatus.plan === "pro" && (
                   <Badge variant="default" className="gap-1">
                     <Crown className="w-3 h-3" />
                     Pro
@@ -321,7 +311,7 @@ const EssayCorrection = () => {
                 )}
               </div>
               <div className="space-y-4">
-                {userPlan === "pro" && (
+                {subscriptionStatus.plan === "pro" && (
                   <Card className="p-4 bg-gradient-card border-primary/20">
                     <div className="flex items-start gap-3">
                       <FileImage className="w-5 h-5 text-primary mt-0.5" />
