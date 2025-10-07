@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_training_feedback: {
+        Row: {
+          admin_id: string
+          corrected_score: number
+          created_at: string | null
+          essay_id: string
+          feedback_notes: string | null
+          id: string
+          original_score: number
+        }
+        Insert: {
+          admin_id: string
+          corrected_score: number
+          created_at?: string | null
+          essay_id: string
+          feedback_notes?: string | null
+          id?: string
+          original_score: number
+        }
+        Update: {
+          admin_id?: string
+          corrected_score?: number
+          created_at?: string | null
+          essay_id?: string
+          feedback_notes?: string | null
+          id?: string
+          original_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_training_feedback_essay_id_fkey"
+            columns: ["essay_id"]
+            isOneToOne: false
+            referencedRelation: "essays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       essays: {
         Row: {
           content: string
