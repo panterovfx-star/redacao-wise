@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, ArrowLeft, Loader2, Send } from "lucide-react";
+import { GraduationCap, ArrowLeft, Loader2, Send, Upload, FileImage, Crown } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const EssayCorrection = () => {
   const navigate = useNavigate();
@@ -19,15 +20,33 @@ const EssayCorrection = () => {
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [correction, setCorrection] = useState<any>(null);
+  const [userPlan, setUserPlan] = useState<string>("free");
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [extractingText, setExtractingText] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const loadUserData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate("/auth");
       } else {
         setUser(session.user);
+        
+        // Load user plan
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('plan')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        if (profileData) {
+          setUserPlan(profileData.plan);
+        }
       }
-    });
+    };
+
+    loadUserData();
 
     // Check if there's essay data passed from Dashboard
     const state = location.state as any;
@@ -38,6 +57,63 @@ const EssayCorrection = () => {
       setCorrection(state.correction);
     }
   }, [navigate, location]);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (userPlan !== "pro") {
+      toast({
+        title: "Recurso Pro",
+        description: "A leitura de imagens e PDFs está disponível apenas para usuários Pro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Formato inválido",
+        description: "Por favor, envie uma imagem (JPG, PNG) ou PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadedFile(file);
+    setExtractingText(true);
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        
+        const { data, error } = await supabase.functions.invoke('extract-text', {
+          body: { file: base64, fileType: file.type }
+        });
+
+        if (error) throw error;
+
+        setContent(data.text);
+        toast({
+          title: "Texto extraído!",
+          description: "O texto foi extraído com sucesso do arquivo.",
+        });
+      };
+    } catch (error: any) {
+      console.error('Error extracting text:', error);
+      toast({
+        title: "Erro ao extrair texto",
+        description: error.message || "Não foi possível extrair o texto do arquivo.",
+        variant: "destructive",
+      });
+    } finally {
+      setExtractingText(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!content.trim()) {
@@ -235,8 +311,59 @@ const EssayCorrection = () => {
           {/* Left side - Essay input */}
           <div>
             <Card className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Sua Redação</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold">Sua Redação</h2>
+                {userPlan === "pro" && (
+                  <Badge variant="default" className="gap-1">
+                    <Crown className="w-3 h-3" />
+                    Pro
+                  </Badge>
+                )}
+              </div>
               <div className="space-y-4">
+                {userPlan === "pro" && (
+                  <Card className="p-4 bg-gradient-card border-primary/20">
+                    <div className="flex items-start gap-3">
+                      <FileImage className="w-5 h-5 text-primary mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-sm mb-1">Recurso Pro: Upload de Imagem/PDF</h4>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Tire uma foto da sua redação ou envie um PDF para extrair o texto automaticamente
+                        </p>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/jpg,application/pdf"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={extractingText || loading}
+                        >
+                          {extractingText ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Extraindo texto...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4 mr-2" />
+                              {uploadedFile ? 'Trocar arquivo' : 'Enviar arquivo'}
+                            </>
+                          )}
+                        </Button>
+                        {uploadedFile && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Arquivo: {uploadedFile.name}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                )}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
                     Título (opcional)

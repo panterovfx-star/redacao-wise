@@ -136,6 +136,7 @@ const Settings = () => {
         "Correções ilimitadas",
         "Correção ENEM e Vestibular",
         "Análise completa com IA avançada",
+        "Leitura de imagens e PDFs",
         "Histórico ilimitado",
         "Suporte VIP 24/7",
         "Relatórios de evolução",

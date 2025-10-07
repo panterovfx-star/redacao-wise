@@ -176,9 +176,13 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground mb-3">
                 Você tem 1 correção gratuita por dia. Atualize para ter mais correções e recursos exclusivos!
               </p>
-              <Button variant="outline" size="sm">
-                Ver Planos
-              </Button>
+                <Button
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate("/settings")}
+                >
+                  Ver Planos
+                </Button>
             </div>
           </div>
         </Card>
