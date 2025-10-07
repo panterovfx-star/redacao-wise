@@ -3,24 +3,54 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { GraduationCap, LogOut, FileText, TrendingUp } from "lucide-react";
+import { GraduationCap, LogOut, FileText, TrendingUp, History, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Tables } from "@/integrations/supabase/types";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [essays, setEssays] = useState<Tables<"essays">[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const loadUserData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session) {
         navigate("/auth");
-      } else {
-        setUser(session.user);
+        setLoading(false);
+        return;
       }
+      
+      setUser(session.user);
+
+      // Check if user is admin
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id);
+      
+      setIsAdmin(roles?.some(r => r.role === 'admin') || false);
+
+      // Load user's essays
+      const { data: essaysData } = await supabase
+        .from('essays')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (essaysData) {
+        setEssays(essaysData);
+      }
+
       setLoading(false);
-    });
+    };
+
+    loadUserData();
 
     const {
       data: { subscription },
@@ -29,6 +59,7 @@ const Dashboard = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        loadUserData();
       }
     });
 
@@ -63,10 +94,18 @@ const Dashboard = () => {
               RedaçãoIA
             </span>
           </div>
-          <Button onClick={handleLogout} variant="outline" size="sm">
-            <LogOut className="w-4 h-4 mr-2" />
-            Sair
-          </Button>
+          <div className="flex gap-2">
+            {isAdmin && (
+              <Button onClick={() => navigate("/admin")} variant="secondary" size="sm">
+                <Shield className="w-4 h-4 mr-2" />
+                Admin
+              </Button>
+            )}
+            <Button onClick={handleLogout} variant="outline" size="sm">
+              <LogOut className="w-4 h-4 mr-2" />
+              Sair
+            </Button>
+          </div>
         </div>
       </nav>
 
@@ -139,6 +178,67 @@ const Dashboard = () => {
             </div>
           </div>
         </Card>
+
+        {essays.length > 0 && (
+          <div className="mt-8">
+            <div className="flex items-center gap-2 mb-4">
+              <History className="w-5 h-5 text-primary" />
+              <h2 className="text-2xl font-bold">Redações Anteriores</h2>
+            </div>
+            <div className="grid gap-4">
+              {essays.map((essay) => (
+                <Card key={essay.id} className="p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="font-semibold">{essay.title}</h3>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          essay.status === 'corrected' 
+                            ? 'bg-success/10 text-success' 
+                            : 'bg-warning/10 text-warning'
+                        }`}>
+                          {essay.status === 'corrected' ? 'Corrigida' : 'Pendente'}
+                        </span>
+                      </div>
+                      {essay.theme && (
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Tema: {essay.theme}
+                        </p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        {essay.essay_type === 'enem' ? 'ENEM' : 'Vestibular'} • {
+                          new Date(essay.created_at!).toLocaleDateString('pt-BR')
+                        }
+                      </p>
+                      {essay.score && (
+                        <p className="text-sm font-semibold text-primary mt-2">
+                          Nota: {essay.score}/{essay.essay_type === 'enem' ? '1000' : '100'}
+                        </p>
+                      )}
+                    </div>
+                    {essay.status === 'corrected' && essay.correction_result && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          // Navigate to correction page with pre-loaded data
+                          navigate(`/correcao/${essay.essay_type}`, { 
+                            state: { 
+                              essayData: essay,
+                              correction: essay.correction_result 
+                            } 
+                          });
+                        }}
+                      >
+                        Ver Correção
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

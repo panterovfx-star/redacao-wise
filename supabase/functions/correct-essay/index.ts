@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { essayId, essayContent, essayType } = await req.json();
+    const { essayId, essayContent, essayType, theme } = await req.json();
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -147,7 +147,12 @@ Retorne em formato JSON com a estrutura:
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Corrija a seguinte redação:\n\n${essayContent}` }
+          { 
+            role: 'user', 
+            content: theme 
+              ? `Corrija a seguinte redação com o tema "${theme}":\n\n${essayContent}` 
+              : `Corrija a seguinte redação:\n\n${essayContent}`
+          }
         ],
       }),
     });

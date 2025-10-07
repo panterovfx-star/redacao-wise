@@ -14,6 +14,7 @@ const EssayCorrection = () => {
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
   const [title, setTitle] = useState("");
+  const [theme, setTheme] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [correction, setCorrection] = useState<any>(null);
@@ -50,6 +51,7 @@ const EssayCorrection = () => {
           title: title || `Redação ${type === 'enem' ? 'ENEM' : 'Vestibular'}`,
           content: content,
           essay_type: type,
+          theme: theme || null,
           status: 'pending',
         })
         .select()
@@ -63,6 +65,7 @@ const EssayCorrection = () => {
           essayId: essayData.id,
           essayContent: content,
           essayType: type,
+          theme: theme || null,
         },
       });
 
@@ -232,6 +235,17 @@ const EssayCorrection = () => {
                     placeholder="Ex: A importância da educação digital"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Tema da redação (opcional)
+                  </label>
+                  <Input
+                    placeholder="Ex: Impactos da tecnologia na educação"
+                    value={theme}
+                    onChange={(e) => setTheme(e.target.value)}
                     disabled={loading}
                   />
                 </div>
