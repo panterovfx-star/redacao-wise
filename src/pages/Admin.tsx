@@ -77,27 +77,45 @@ const Admin = () => {
         todayEssays: todayCount || 0,
       });
 
-      const { data: usersData } = await supabase
+      // Fetch profiles
+      const { data: profilesData } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles(role)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      setUsers(usersData || []);
+      // Fetch user roles
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('*');
 
+      // Combine profiles with roles
+      const usersWithRoles = profilesData?.map(profile => ({
+        ...profile,
+        user_roles: rolesData?.filter(role => role.user_id === profile.user_id) || []
+      })) || [];
+
+      setUsers(usersWithRoles);
+
+      // Fetch essays
       const { data: essaysData } = await supabase
         .from('essays')
-        .select(`
-          *,
-          profiles(email)
-        `)
+        .select('*')
         .eq('status', 'corrected')
         .order('created_at', { ascending: false })
         .limit(50);
 
-      setEssays(essaysData || []);
+      // Fetch all profiles to match emails
+      const { data: allProfiles } = await supabase
+        .from('profiles')
+        .select('user_id, email');
+
+      // Combine essays with profile emails
+      const essaysWithEmails = essaysData?.map(essay => ({
+        ...essay,
+        profiles: allProfiles?.find(p => p.user_id === essay.user_id)
+      })) || [];
+
+      setEssays(essaysWithEmails);
       setLoading(false);
     };
 
@@ -124,15 +142,24 @@ const Admin = () => {
       description: "Plano atualizado com sucesso!",
     });
 
-    const { data: usersData } = await supabase
+    // Refresh profiles
+    const { data: profilesData } = await supabase
       .from('profiles')
-      .select(`
-        *,
-        user_roles(role)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
-    setUsers(usersData || []);
+    // Refresh user roles
+    const { data: rolesData } = await supabase
+      .from('user_roles')
+      .select('*');
+
+    // Combine profiles with roles
+    const usersWithRoles = profilesData?.map(profile => ({
+      ...profile,
+      user_roles: rolesData?.filter(role => role.user_id === profile.user_id) || []
+    })) || [];
+
+    setUsers(usersWithRoles);
   };
 
   const toggleUserRole = async (userId: string, role: 'admin' | 'user', add: boolean) => {
@@ -171,15 +198,24 @@ const Admin = () => {
       description: add ? "Permissão adicionada!" : "Permissão removida!",
     });
 
-    const { data: usersData } = await supabase
+    // Refresh profiles
+    const { data: profilesData } = await supabase
       .from('profiles')
-      .select(`
-        *,
-        user_roles(role)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
-    setUsers(usersData || []);
+    // Refresh user roles
+    const { data: rolesData } = await supabase
+      .from('user_roles')
+      .select('*');
+
+    // Combine profiles with roles
+    const usersWithRoles = profilesData?.map(profile => ({
+      ...profile,
+      user_roles: rolesData?.filter(role => role.user_id === profile.user_id) || []
+    })) || [];
+
+    setUsers(usersWithRoles);
   };
 
   const submitTrainingFeedback = async () => {
