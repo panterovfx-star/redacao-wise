@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, ArrowLeft, Loader2, Send, Upload, FileImage, Crown } from "lucide-react";
+import { GraduationCap, ArrowLeft, Loader2, Send, Upload, FileImage, Crown, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useSubscription } from "@/hooks/use-subscription";
 
@@ -23,7 +23,9 @@ const EssayCorrection = () => {
   const [correction, setCorrection] = useState<any>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [extractingText, setExtractingText] = useState(false);
+  const [textExtracted, setTextExtracted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { status: subscriptionStatus } = useSubscription();
 
   useEffect(() => {
@@ -105,9 +107,17 @@ const EssayCorrection = () => {
 
         if (data?.text) {
           setContent(data.text);
+          setTextExtracted(true);
+          
+          // Focus no textarea após extração
+          setTimeout(() => {
+            textareaRef.current?.focus();
+            textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+          
           toast({
-            title: "Texto extraído com sucesso!",
-            description: `Foram extraídos ${data.text.length} caracteres do arquivo.`,
+            title: "✅ Texto extraído com sucesso!",
+            description: `${data.text.length} caracteres extraídos. Você pode editar o texto abaixo antes de enviar.`,
           });
         } else {
           throw new Error("Nenhum texto encontrado no arquivo");
@@ -378,6 +388,7 @@ const EssayCorrection = () => {
                               onClick={() => {
                                 setUploadedFile(null);
                                 setContent("");
+                                setTextExtracted(false);
                                 if (fileInputRef.current) {
                                   fileInputRef.current.value = "";
                                 }
@@ -425,19 +436,42 @@ const EssayCorrection = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    Texto da redação *
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium">
+                      Texto da redação *
+                    </label>
+                    {textExtracted && (
+                      <Badge variant="outline" className="gap-1 bg-success/10 text-success border-success/20">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Texto extraído
+                      </Badge>
+                    )}
+                  </div>
                   <Textarea
-                    placeholder="Cole ou digite sua redação aqui..."
+                    ref={textareaRef}
+                    placeholder={subscriptionStatus.plan === "pro" 
+                      ? "Cole, digite sua redação ou faça upload de uma imagem/PDF acima..." 
+                      : "Cole ou digite sua redação aqui..."}
                     className="min-h-[400px] font-mono text-sm"
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    disabled={loading}
+                    onChange={(e) => {
+                      setContent(e.target.value);
+                      if (textExtracted && e.target.value !== content) {
+                        setTextExtracted(false);
+                      }
+                    }}
+                    disabled={loading || extractingText}
                   />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {content.length} caracteres
-                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-xs text-muted-foreground">
+                      {content.length} caracteres
+                    </p>
+                    {textExtracted && content.length > 0 && (
+                      <p className="text-xs text-success">
+                        ✓ Pronto para enviar
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <Button
                   onClick={handleSubmit}
