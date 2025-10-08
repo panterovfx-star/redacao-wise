@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
 import { useSubscription } from "@/hooks/use-subscription";
 import { Badge } from "@/components/ui/badge";
+import { InsightsPanel } from "@/components/InsightsPanel";
+import { PracticeThemeGenerator } from "@/components/PracticeThemeGenerator";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -274,6 +276,14 @@ const Dashboard = () => {
             </div>
           </div>
         </Card>
+
+        {/* Premium Features: Insights and Practice Themes */}
+        {(subscriptionStatus.plan === 'standard' || subscriptionStatus.plan === 'pro') && (
+          <div className="mt-8 grid gap-6 lg:grid-cols-2">
+            <InsightsPanel />
+            <PracticeThemeGenerator />
+          </div>
+        )}
 
         {essays.length > 0 && (
           <div className="mt-8">

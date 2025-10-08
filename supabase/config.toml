@@ -14,3 +14,9 @@ verify_jwt = true
 
 [functions.customer-portal]
 verify_jwt = true
+
+[functions.generate-insights]
+verify_jwt = true
+
+[functions.generate-practice-theme]
+verify_jwt = true

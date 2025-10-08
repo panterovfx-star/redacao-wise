@@ -40,13 +40,22 @@ const EssayCorrection = () => {
 
     loadUserData();
 
-    // Check if there's essay data passed from Dashboard
+    // Check if there's essay data passed from Dashboard or practice mode
     const state = location.state as any;
     if (state?.essayData && state?.correction) {
       setTitle(state.essayData.title || "");
       setTheme(state.essayData.theme || "");
       setContent(state.essayData.content || "");
       setCorrection(state.correction);
+    } else if (state?.practiceMode && state?.theme) {
+      // Pre-fill practice theme
+      setTheme(state.theme);
+      if (state.context) {
+        toast({
+          title: "Tema de Treino Carregado",
+          description: "Leia a contextualização e comece a escrever!",
+        });
+      }
     }
   }, [navigate, location]);
 
