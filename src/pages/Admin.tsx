@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { GraduationCap, ArrowLeft, Users, FileText, CreditCard, Settings, Brain } from "lucide-react";
+import { GraduationCap, ArrowLeft, Users, FileText, CreditCard, Settings, Brain, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -399,24 +400,80 @@ const Admin = () => {
                 </div>
               </div>
 
-              <div className="border-t pt-4">
-                <h3 className="font-semibold mb-3">Distribuição de Planos</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="text-center">
+              <div className="border-t pt-6 mt-4">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Distribuição de Planos
+                </h3>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Free', value: stats.freeUsers, color: 'hsl(var(--muted))' },
+                            { name: 'Standard', value: stats.standardUsers, color: 'hsl(var(--primary))' },
+                            { name: 'Pro', value: stats.proUsers, color: 'hsl(var(--secondary))' }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                        >
+                          {[
+                            { name: 'Free', value: stats.freeUsers, color: 'hsl(var(--muted))' },
+                            { name: 'Standard', value: stats.standardUsers, color: 'hsl(var(--primary))' },
+                            { name: 'Pro', value: stats.proUsers, color: 'hsl(var(--secondary))' }
+                          ].map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={[
+                          { name: 'Free', usuarios: stats.freeUsers, receita: 0 },
+                          { name: 'Standard', usuarios: stats.standardUsers, receita: stats.standardUsers * 29.90 },
+                          { name: 'Pro', usuarios: stats.proUsers, receita: stats.proUsers * 59.90 }
+                        ]}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis yAxisId="left" />
+                        <YAxis yAxisId="right" orientation="right" />
+                        <Tooltip />
+                        <Legend />
+                        <Bar yAxisId="left" dataKey="usuarios" fill="hsl(var(--primary))" name="Usuários" />
+                        <Bar yAxisId="right" dataKey="receita" fill="hsl(var(--secondary))" name="Receita (R$)" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 mt-6">
+                  <div className="text-center p-4 bg-muted/30 rounded-lg">
                     <p className="text-2xl font-bold text-muted-foreground">{stats.freeUsers}</p>
                     <p className="text-xs text-muted-foreground">Free</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       {stats.totalUsers > 0 ? ((stats.freeUsers / stats.totalUsers) * 100).toFixed(0) : 0}%
                     </p>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center p-4 bg-primary/10 rounded-lg">
                     <p className="text-2xl font-bold text-primary">{stats.standardUsers}</p>
                     <p className="text-xs text-muted-foreground">Standard</p>
                     <p className="text-xs text-primary mt-1">
                       R$ {(stats.standardUsers * 29.90).toFixed(2)}/mês
                     </p>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center p-4 bg-secondary/10 rounded-lg">
                     <p className="text-2xl font-bold text-secondary">{stats.proUsers}</p>
                     <p className="text-xs text-muted-foreground">Pro</p>
                     <p className="text-xs text-secondary mt-1">
@@ -426,7 +483,7 @@ const Admin = () => {
                 </div>
               </div>
 
-              <div className="border-t pt-4 mt-4">
+              <div className="border-t pt-4 mt-6">
                 <h3 className="font-semibold mb-3">Métricas de Conversão</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
@@ -443,6 +500,12 @@ const Admin = () => {
                       R$ {(stats.standardUsers + stats.proUsers) > 0 
                         ? (stats.mrr / (stats.standardUsers + stats.proUsers)).toFixed(2) 
                         : '0.00'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Usuários Pagantes</span>
+                    <span className="font-semibold">
+                      {stats.standardUsers + stats.proUsers} de {stats.totalUsers}
                     </span>
                   </div>
                 </div>
