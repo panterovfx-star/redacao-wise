@@ -3,9 +3,11 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { GraduationCap, LogOut, FileText, TrendingUp, History, Shield, Settings } from "lucide-react";
+import { GraduationCap, LogOut, FileText, TrendingUp, History, Shield, Settings, Crown, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tables } from "@/integrations/supabase/types";
+import { useSubscription } from "@/hooks/use-subscription";
+import { Badge } from "@/components/ui/badge";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -15,6 +17,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [essays, setEssays] = useState<Tables<"essays">[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const { status: subscriptionStatus, loading: subscriptionLoading } = useSubscription();
 
   useEffect(() => {
     // Check for checkout success/cancel
@@ -54,6 +58,17 @@ const Dashboard = () => {
         .eq('user_id', session.user.id);
       
       setIsAdmin(roles?.some(r => r.role === 'admin') || false);
+
+      // Load profile data
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .single();
+      
+      if (profileData) {
+        setProfile(profileData);
+      }
 
       // Load user's essays
       const { data: essaysData } = await supabase
@@ -186,23 +201,62 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        <Card className="mt-8 p-6 bg-gradient-card border-2">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-2xl">✨</span>
+        <Card className="mt-8 p-4 sm:p-6 bg-gradient-card border-2">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{
+              background: subscriptionStatus.plan === 'pro' ? 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)))' : 
+                         subscriptionStatus.plan === 'standard' ? 'hsl(var(--primary) / 0.1)' : 
+                         'hsl(var(--warning) / 0.1)'
+            }}>
+              {subscriptionStatus.plan === 'pro' ? (
+                <Crown className="w-5 h-5 text-primary-foreground" />
+              ) : subscriptionStatus.plan === 'standard' ? (
+                <Zap className="w-5 h-5 text-primary" />
+              ) : (
+                <span className="text-2xl">✨</span>
+              )}
             </div>
-            <div>
-              <h3 className="font-semibold mb-1">Plano Gratuito</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                Você tem 1 correção gratuita por dia. Atualize para ter mais correções e recursos exclusivos!
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="font-semibold text-base sm:text-lg">
+                  {subscriptionStatus.plan === 'pro' ? 'Plano Pro' : 
+                   subscriptionStatus.plan === 'standard' ? 'Plano Standard' : 
+                   'Plano Gratuito'}
+                </h3>
+                <Badge variant={subscriptionStatus.plan === 'pro' ? 'default' : subscriptionStatus.plan === 'standard' ? 'secondary' : 'outline'} className="text-xs">
+                  {subscriptionStatus.plan === 'pro' ? 'Premium' : 
+                   subscriptionStatus.plan === 'standard' ? 'Ativo' : 
+                   'Free'}
+                </Badge>
+              </div>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-3">
+                {subscriptionStatus.plan === 'pro' ? (
+                  <>✨ Correções ilimitadas • Análise avançada com IA • Leitura de PDFs • Suporte VIP 24/7</>
+                ) : subscriptionStatus.plan === 'standard' ? (
+                  <>⚡ 10 correções por dia • Análise detalhada • Histórico completo • Suporte prioritário</>
+                ) : (
+                  <>Você tem 1 correção gratuita por dia. Atualize para ter mais correções e recursos exclusivos!</>
+                )}
               </p>
-                <Button
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => navigate("/settings")}
-                >
-                  Ver Planos
-                </Button>
+              {profile && (
+                <p className="text-xs text-muted-foreground mb-3">
+                  <span className="font-medium">{profile.daily_corrections_used || 0}</span> correções usadas hoje
+                  {subscriptionStatus.plan === 'free' && ' de 1'}
+                  {subscriptionStatus.plan === 'standard' && ' de 10'}
+                </p>
+              )}
+              {subscriptionStatus.subscription_end && (
+                <p className="text-xs text-muted-foreground mb-3">
+                  Renovação: {new Date(subscriptionStatus.subscription_end).toLocaleDateString('pt-BR')}
+                </p>
+              )}
+              <Button
+                variant={subscriptionStatus.plan === 'free' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => navigate("/settings")}
+              >
+                {subscriptionStatus.plan === 'free' ? 'Ver Planos' : 'Gerenciar Assinatura'}
+              </Button>
             </div>
           </div>
         </Card>
