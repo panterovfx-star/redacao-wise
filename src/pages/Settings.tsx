@@ -155,6 +155,33 @@ const Settings = () => {
     });
   };
 
+  const handleThemeChange = async (newTheme: "light" | "dark" | "system") => {
+    setTheme(newTheme);
+    
+    // Save to database immediately
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ theme_preference: newTheme })
+      .eq('user_id', session.user.id);
+
+    if (error) {
+      toast({
+        title: "Erro ao salvar tema",
+        description: "Não foi possível salvar sua preferência de tema.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Tema atualizado!",
+      description: `Tema alterado para ${newTheme === 'light' ? 'claro' : newTheme === 'dark' ? 'escuro' : 'sistema'}.`,
+    });
+  };
+
   const handleExportData = () => {
     toast({
       title: "Exportação iniciada",
@@ -472,7 +499,7 @@ const Settings = () => {
                     <Button
                       variant={theme === "light" ? "default" : "outline"}
                       className="flex flex-col gap-2 h-auto py-3"
-                      onClick={() => setTheme("light")}
+                      onClick={() => handleThemeChange("light")}
                     >
                       <Sun className="w-5 h-5" />
                       <span className="text-xs">Claro</span>
@@ -480,7 +507,7 @@ const Settings = () => {
                     <Button
                       variant={theme === "dark" ? "default" : "outline"}
                       className="flex flex-col gap-2 h-auto py-3"
-                      onClick={() => setTheme("dark")}
+                      onClick={() => handleThemeChange("dark")}
                     >
                       <Moon className="w-5 h-5" />
                       <span className="text-xs">Escuro</span>
@@ -488,21 +515,14 @@ const Settings = () => {
                     <Button
                       variant={theme === "system" ? "default" : "outline"}
                       className="flex flex-col gap-2 h-auto py-3"
-                      onClick={() => setTheme("system")}
+                      onClick={() => handleThemeChange("system")}
                     >
                       <Monitor className="w-5 h-5" />
                       <span className="text-xs">Sistema</span>
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Escolha como o Redator aparece para você
                   </p>
-                </div>
-
-                <div className="pt-4 border-t">
-                  <Button className="w-full" onClick={handleSavePreferences}>
-                    Salvar Preferências
-                  </Button>
                 </div>
               </div>
             </Card>
