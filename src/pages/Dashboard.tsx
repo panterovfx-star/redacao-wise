@@ -133,25 +133,25 @@ const Dashboard = () => {
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">
             Bem-vindo de volta, {user?.email?.split("@")[0]}!
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm sm:text-base">
             Escolha um tipo de correção para começar
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 max-w-4xl">
-          <Card className="p-6 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary group">
-            <div className="flex flex-col gap-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                <FileText className="w-6 h-6 text-primary" />
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 max-w-4xl">
+          <Card className="p-4 sm:p-6 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary group">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 rounded-xl flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">ENEM</h3>
-                <p className="text-muted-foreground text-sm">
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">ENEM</h3>
+                <p className="text-muted-foreground text-xs sm:text-sm">
                   Correção baseada nos critérios do ENEM com análise das 5 competências
                 </p>
               </div>
@@ -164,14 +164,14 @@ const Dashboard = () => {
             </div>
           </Card>
 
-          <Card className="p-6 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-secondary group">
-            <div className="flex flex-col gap-4">
-              <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
-                <TrendingUp className="w-6 h-6 text-secondary" />
+          <Card className="p-4 sm:p-6 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-secondary group">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-secondary/10 rounded-xl flex items-center justify-center group-hover:bg-secondary/20 transition-colors">
+                <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-secondary" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Vestibular Tradicional</h3>
-                <p className="text-muted-foreground text-sm">
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Vestibular Tradicional</h3>
+                <p className="text-muted-foreground text-xs sm:text-sm">
                   Correção focada em critérios de vestibulares tradicionais e dissertação
                 </p>
               </div>

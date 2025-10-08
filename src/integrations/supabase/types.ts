@@ -98,6 +98,7 @@ export type Database = {
           email: string
           id: string
           last_correction_date: string | null
+          manual_plan_override: boolean | null
           plan: string
           updated_at: string | null
           user_id: string
@@ -108,6 +109,7 @@ export type Database = {
           email: string
           id?: string
           last_correction_date?: string | null
+          manual_plan_override?: boolean | null
           plan?: string
           updated_at?: string | null
           user_id: string
@@ -118,6 +120,7 @@ export type Database = {
           email?: string
           id?: string
           last_correction_date?: string | null
+          manual_plan_override?: boolean | null
           plan?: string
           updated_at?: string | null
           user_id?: string

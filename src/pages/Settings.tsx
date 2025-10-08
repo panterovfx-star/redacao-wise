@@ -200,27 +200,29 @@ const Settings = () => {
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Configurações da Conta</h1>
-          <p className="text-muted-foreground">
+      <div className="container mx-auto px-4 py-4 sm:py-8 max-w-6xl">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Configurações da Conta</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Gerencie seu perfil, plano e preferências
           </p>
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 max-w-md">
-            <TabsTrigger value="profile">
-              <User className="w-4 h-4 mr-2" />
-              Perfil
+            <TabsTrigger value="profile" className="text-xs sm:text-sm">
+              <User className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Perfil</span>
+              <span className="sm:hidden">Info</span>
             </TabsTrigger>
-            <TabsTrigger value="plan">
-              <CreditCard className="w-4 h-4 mr-2" />
-              Plano
+            <TabsTrigger value="plan" className="text-xs sm:text-sm">
+              <CreditCard className="w-4 h-4 mr-1 sm:mr-2" />
+              <span>Plano</span>
             </TabsTrigger>
-            <TabsTrigger value="settings">
-              <SettingsIcon className="w-4 h-4 mr-2" />
-              Preferências
+            <TabsTrigger value="settings" className="text-xs sm:text-sm">
+              <SettingsIcon className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Preferências</span>
+              <span className="sm:hidden">Config</span>
             </TabsTrigger>
           </TabsList>
 
@@ -282,11 +284,11 @@ const Settings = () => {
                 Selecione o plano que melhor atende suas necessidades
               </p>
 
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                 {plans.map((plan) => (
                   <Card 
                     key={plan.name}
-                    className={`p-6 relative ${
+                    className={`p-4 sm:p-6 relative ${
                       plan.popular ? 'border-2 border-primary shadow-lg' : ''
                     } ${plan.current ? 'bg-muted/50' : ''}`}
                   >

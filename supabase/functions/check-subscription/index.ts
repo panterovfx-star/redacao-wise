@@ -43,17 +43,38 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Check if admin has manually overridden the plan
+    const { data: profileData } = await supabaseClient
+      .from('profiles')
+      .select('plan, manual_plan_override')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileData?.manual_plan_override) {
+      logStep("Manual plan override detected, skipping Stripe sync", { 
+        currentPlan: profileData.plan 
+      });
+      return new Response(JSON.stringify({
+        subscribed: profileData.plan !== 'free',
+        plan: profileData.plan
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length === 0) {
       logStep("No customer found, user has free plan");
       
-      // Update profile to free plan
+      // Update profile to free plan only if not manually overridden
       await supabaseClient
         .from('profiles')
         .update({ plan: 'free' })
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('manual_plan_override', false);
       
       return new Response(JSON.stringify({ 
         subscribed: false,
@@ -96,10 +117,13 @@ serve(async (req) => {
       logStep("No active subscription found, setting to free");
     }
 
-    // Update profile with the plan
+    // Update profile with the plan (and reset manual override since user has active subscription)
     await supabaseClient
       .from('profiles')
-      .update({ plan })
+      .update({ 
+        plan,
+        manual_plan_override: false 
+      })
       .eq('user_id', user.id);
 
     return new Response(JSON.stringify({

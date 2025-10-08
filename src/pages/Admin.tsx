@@ -125,7 +125,10 @@ const Admin = () => {
   const updateUserPlan = async (userId: string, newPlan: string) => {
     const { error } = await supabase
       .from('profiles')
-      .update({ plan: newPlan })
+      .update({ 
+        plan: newPlan,
+        manual_plan_override: true 
+      })
       .eq('user_id', userId);
 
     if (error) {
@@ -139,7 +142,7 @@ const Admin = () => {
 
     toast({
       title: "Sucesso",
-      description: "Plano atualizado com sucesso!",
+      description: "Plano atualizado manualmente pelo admin!",
     });
 
     // Refresh profiles
@@ -289,19 +292,19 @@ const Admin = () => {
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Dashboard Admin</h1>
-          <p className="text-muted-foreground">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Dashboard Admin</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Gerenciamento completo do sistema
           </p>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-            <TabsTrigger value="users">Gerenciar Usuários</TabsTrigger>
-            <TabsTrigger value="training">Treinar IA</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 max-w-full">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm">Visão Geral</TabsTrigger>
+            <TabsTrigger value="users" className="text-xs sm:text-sm">Usuários</TabsTrigger>
+            <TabsTrigger value="training" className="text-xs sm:text-sm">Treinar IA</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -350,7 +353,7 @@ const Admin = () => {
                 <Settings className="w-5 h-5" />
                 Gerenciamento de Usuários
               </h2>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-6 px-6">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -414,10 +417,10 @@ const Admin = () => {
                 <Brain className="w-5 h-5" />
                 Treinamento da IA
               </h2>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-muted-foreground mb-6 text-sm">
                 Revise as correções da IA e forneça feedback para melhorar a precisão das avaliações.
               </p>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-6 px-6">
                 <Table>
                   <TableHeader>
                     <TableRow>
