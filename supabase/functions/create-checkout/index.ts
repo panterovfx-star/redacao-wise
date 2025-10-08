@@ -18,7 +18,7 @@ serve(async (req) => {
   );
 
   try {
-    const { priceId } = await req.json();
+    const { priceId, enableTrial = false } = await req.json();
     
     if (!priceId) {
       throw new Error("Price ID is required");
@@ -52,7 +52,7 @@ serve(async (req) => {
       console.log("No existing customer, will create during checkout");
     }
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
@@ -64,7 +64,17 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${req.headers.get("origin")}/dashboard?checkout=success`,
       cancel_url: `${req.headers.get("origin")}/settings?checkout=canceled`,
-    });
+    };
+
+    // Add trial period if enabled
+    if (enableTrial) {
+      sessionConfig.subscription_data = {
+        trial_period_days: 7,
+      };
+      console.log("Trial period enabled: 7 days");
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     console.log("Checkout session created:", session.id);
 

@@ -89,7 +89,7 @@ const Settings = () => {
     });
   };
 
-  const handleSubscribe = async (planName: string) => {
+  const handleSubscribe = async (planName: string, withTrial: boolean = false) => {
     const planKey = planName.toLowerCase();
     const priceId = PLAN_PRICES[planKey];
     
@@ -102,7 +102,7 @@ const Settings = () => {
       return;
     }
 
-    await createCheckout(priceId);
+    await createCheckout(priceId, withTrial);
   };
 
   const handleDeleteAccount = () => {
@@ -161,6 +161,7 @@ const Settings = () => {
       price: "R$ 59,90",
       period: "/mês",
       features: [
+        "✨ 7 dias grátis para testar",
         "Correções ilimitadas",
         "Correção ENEM e Vestibular",
         "Análise completa com IA avançada",
@@ -171,7 +172,8 @@ const Settings = () => {
         "Simulados exclusivos",
       ],
       current: subscriptionStatus.plan === "pro",
-      buttonText: subscriptionStatus.plan === "pro" ? "Plano Atual" : "Assinar",
+      buttonText: subscriptionStatus.plan === "pro" ? "Plano Atual" : "Começar Teste Grátis",
+      trial: true,
     },
   ];
 
@@ -319,10 +321,15 @@ const Settings = () => {
                       className="w-full"
                       variant={plan.current ? "outline" : plan.popular ? "default" : "secondary"}
                       disabled={plan.current || plan.disabled}
-                      onClick={() => !plan.current && !plan.disabled && handleSubscribe(plan.name)}
+                      onClick={() => !plan.current && !plan.disabled && handleSubscribe(plan.name, plan.trial || false)}
                     >
                       {plan.buttonText}
                     </Button>
+                    {plan.trial && !plan.current && (
+                      <p className="text-xs text-center text-muted-foreground mt-2">
+                        Cancele a qualquer momento durante o período de teste
+                      </p>
+                    )}
                   </Card>
                 ))}
               </div>

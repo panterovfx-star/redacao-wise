@@ -22,6 +22,10 @@ const Admin = () => {
     totalUsers: 0,
     totalEssays: 0,
     todayEssays: 0,
+    freeUsers: 0,
+    standardUsers: 0,
+    proUsers: 0,
+    mrr: 0,
   });
   const [users, setUsers] = useState<any[]>([]);
   const [essays, setEssays] = useState<any[]>([]);
@@ -71,10 +75,27 @@ const Admin = () => {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', today);
 
+      // Fetch profiles for financial stats
+      const { data: allProfilesData } = await supabase
+        .from('profiles')
+        .select('plan');
+
+      const planCounts = allProfilesData?.reduce((acc: any, profile) => {
+        acc[profile.plan] = (acc[profile.plan] || 0) + 1;
+        return acc;
+      }, { free: 0, standard: 0, pro: 0 }) || { free: 0, standard: 0, pro: 0 };
+
+      // Calculate MRR (Monthly Recurring Revenue)
+      const mrr = (planCounts.standard * 29.90) + (planCounts.pro * 59.90);
+
       setStats({
         totalUsers: usersCount || 0,
         totalEssays: essaysCount || 0,
         todayEssays: todayCount || 0,
+        freeUsers: planCounts.free,
+        standardUsers: planCounts.standard,
+        proUsers: planCounts.pro,
+        mrr: mrr,
       });
 
       // Fetch profiles
@@ -345,6 +366,88 @@ const Admin = () => {
                 </div>
               </Card>
             </div>
+
+            <Card className="p-6">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Informações Financeiras
+              </h2>
+              
+              <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-muted-foreground">MRR (Receita Mensal)</p>
+                    <Badge variant="default" className="text-lg font-bold">
+                      R$ {stats.mrr.toFixed(2)}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Receita mensal recorrente baseada nas assinaturas ativas
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-muted-foreground">ARR (Receita Anual)</p>
+                    <Badge variant="secondary" className="text-lg font-bold">
+                      R$ {(stats.mrr * 12).toFixed(2)}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Projeção anual baseada no MRR atual
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <h3 className="font-semibold mb-3">Distribuição de Planos</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-muted-foreground">{stats.freeUsers}</p>
+                    <p className="text-xs text-muted-foreground">Free</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {stats.totalUsers > 0 ? ((stats.freeUsers / stats.totalUsers) * 100).toFixed(0) : 0}%
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary">{stats.standardUsers}</p>
+                    <p className="text-xs text-muted-foreground">Standard</p>
+                    <p className="text-xs text-primary mt-1">
+                      R$ {(stats.standardUsers * 29.90).toFixed(2)}/mês
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-secondary">{stats.proUsers}</p>
+                    <p className="text-xs text-muted-foreground">Pro</p>
+                    <p className="text-xs text-secondary mt-1">
+                      R$ {(stats.proUsers * 59.90).toFixed(2)}/mês
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4 mt-4">
+                <h3 className="font-semibold mb-3">Métricas de Conversão</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Taxa de Conversão (Free → Pago)</span>
+                    <span className="font-semibold">
+                      {stats.totalUsers > 0 
+                        ? (((stats.standardUsers + stats.proUsers) / stats.totalUsers) * 100).toFixed(1) 
+                        : 0}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Ticket Médio</span>
+                    <span className="font-semibold">
+                      R$ {(stats.standardUsers + stats.proUsers) > 0 
+                        ? (stats.mrr / (stats.standardUsers + stats.proUsers)).toFixed(2) 
+                        : '0.00'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4">
@@ -385,7 +488,11 @@ const Admin = () => {
                               </SelectContent>
                             </Select>
                           </TableCell>
-                          <TableCell>{user.daily_corrections_used || 0}</TableCell>
+                          <TableCell>
+                            {user.last_correction_date === new Date().toISOString().split('T')[0]
+                              ? (user.daily_corrections_used || 0)
+                              : 0}
+                          </TableCell>
                           <TableCell>
                             {isAdmin ? (
                               <Badge variant="default">Admin</Badge>

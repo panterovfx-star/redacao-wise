@@ -46,10 +46,10 @@ export const useSubscription = () => {
     }
   };
 
-  const createCheckout = async (priceId: string) => {
+  const createCheckout = async (priceId: string, enableTrial: boolean = false) => {
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId }
+        body: { priceId, enableTrial }
       });
 
       if (error) throw error;
