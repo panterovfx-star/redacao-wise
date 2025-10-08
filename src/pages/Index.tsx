@@ -89,7 +89,7 @@ const Index = () => {
               <GraduationCap className="w-6 h-6 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              RedaçãoIA
+              Redator
             </span>
           </div>
           <div className="flex gap-2">
@@ -260,7 +260,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border bg-card/50 backdrop-blur-sm py-8">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
-          <p>© 2025 RedaçãoIA. Todos os direitos reservados.</p>
+          <p>© 2025 Redator. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>

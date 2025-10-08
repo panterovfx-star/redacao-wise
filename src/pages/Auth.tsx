@@ -34,7 +34,7 @@ const Auth = () => {
             <GraduationCap className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-3xl font-bold bg-gradient-hero bg-clip-text text-transparent mb-2">
-            RedaçãoIA
+            Redator
           </h1>
           <p className="text-muted-foreground">
             Correção inteligente de redações

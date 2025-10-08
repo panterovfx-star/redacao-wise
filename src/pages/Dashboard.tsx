@@ -128,7 +128,7 @@ const Dashboard = () => {
               <GraduationCap className="w-6 h-6 text-primary-foreground" />
             </div>
             <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              RedaçãoIA
+              Redator
             </span>
           </div>
           <div className="flex gap-2">
