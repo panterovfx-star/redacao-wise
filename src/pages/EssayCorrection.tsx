@@ -61,11 +61,22 @@ const EssayCorrection = () => {
       return;
     }
 
-    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'application/pdf'];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    
     if (!validTypes.includes(file.type)) {
       toast({
         title: "Formato inválido",
-        description: "Por favor, envie uma imagem (JPG, PNG) ou PDF.",
+        description: "Por favor, envie uma imagem (JPG, PNG, WEBP) ou PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > maxSize) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "O arquivo deve ter no máximo 10MB.",
         variant: "destructive",
       });
       return;
@@ -81,25 +92,39 @@ const EssayCorrection = () => {
       reader.onload = async () => {
         const base64 = reader.result as string;
         
+        toast({
+          title: "Processando arquivo...",
+          description: "Extraindo o texto do arquivo. Isso pode levar alguns segundos.",
+        });
+
         const { data, error } = await supabase.functions.invoke('extract-text', {
           body: { file: base64, fileType: file.type }
         });
 
         if (error) throw error;
 
-        setContent(data.text);
-        toast({
-          title: "Texto extraído!",
-          description: "O texto foi extraído com sucesso do arquivo.",
-        });
+        if (data?.text) {
+          setContent(data.text);
+          toast({
+            title: "Texto extraído com sucesso!",
+            description: `Foram extraídos ${data.text.length} caracteres do arquivo.`,
+          });
+        } else {
+          throw new Error("Nenhum texto encontrado no arquivo");
+        }
+      };
+
+      reader.onerror = () => {
+        throw new Error("Erro ao ler o arquivo");
       };
     } catch (error: any) {
       console.error('Error extracting text:', error);
       toast({
         title: "Erro ao extrair texto",
-        description: error.message || "Não foi possível extrair o texto do arquivo.",
+        description: error.message || "Não foi possível extrair o texto do arquivo. Tente novamente.",
         variant: "destructive",
       });
+      setUploadedFile(null);
     } finally {
       setExtractingText(false);
     }
@@ -314,41 +339,64 @@ const EssayCorrection = () => {
                 {subscriptionStatus.plan === "pro" && (
                   <Card className="p-4 bg-gradient-card border-primary/20">
                     <div className="flex items-start gap-3">
-                      <FileImage className="w-5 h-5 text-primary mt-0.5" />
-                      <div className="flex-1">
+                      <FileImage className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-sm mb-1">Recurso Pro: Upload de Imagem/PDF</h4>
                         <p className="text-xs text-muted-foreground mb-3">
-                          Tire uma foto da sua redação ou envie um PDF para extrair o texto automaticamente
+                          Tire uma foto da sua redação ou envie um PDF. Nossa IA extrairá o texto automaticamente com alta precisão.
                         </p>
                         <input
                           ref={fileInputRef}
                           type="file"
-                          accept="image/jpeg,image/png,image/jpg,application/pdf"
+                          accept="image/jpeg,image/png,image/jpg,image/webp,application/pdf"
                           onChange={handleFileUpload}
                           className="hidden"
                         />
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={extractingText || loading}
-                        >
-                          {extractingText ? (
-                            <>
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                              Extraindo texto...
-                            </>
-                          ) : (
-                            <>
-                              <Upload className="w-4 h-4 mr-2" />
-                              {uploadedFile ? 'Trocar arquivo' : 'Enviar arquivo'}
-                            </>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={extractingText || loading}
+                          >
+                            {extractingText ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Extraindo texto...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4 mr-2" />
+                                {uploadedFile ? 'Trocar arquivo' : 'Enviar arquivo'}
+                              </>
+                            )}
+                          </Button>
+                          {uploadedFile && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setUploadedFile(null);
+                                setContent("");
+                                if (fileInputRef.current) {
+                                  fileInputRef.current.value = "";
+                                }
+                              }}
+                              disabled={extractingText || loading}
+                            >
+                              Limpar
+                            </Button>
                           )}
-                        </Button>
-                        {uploadedFile && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Arquivo: {uploadedFile.name}
-                          </p>
+                        </div>
+                        {uploadedFile && !extractingText && (
+                          <div className="mt-3 p-2 bg-muted rounded-lg">
+                            <p className="text-xs font-medium text-muted-foreground">
+                              📄 {uploadedFile.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {(uploadedFile.size / 1024).toFixed(2)} KB • {uploadedFile.type.split('/')[1].toUpperCase()}
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>

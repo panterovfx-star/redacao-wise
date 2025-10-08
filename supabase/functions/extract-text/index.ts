@@ -33,7 +33,7 @@ serve(async (req) => {
       imageData = file.split(',')[1];
     }
 
-    // Use Gemini to extract text from image/PDF
+    // Use Gemini 2.5 Flash to extract text from image/PDF with optimized prompt
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -48,7 +48,7 @@ serve(async (req) => {
             content: [
               {
                 type: 'text',
-                text: 'Por favor, extraia TODO o texto desta imagem/documento de redação. Retorne APENAS o texto extraído, sem adicionar nenhum comentário, análise ou formatação extra. Mantenha a formatação original do texto incluindo parágrafos e quebras de linha.'
+                text: 'Você é um especialista em OCR (reconhecimento ótico de caracteres). Sua tarefa é extrair TODO o texto desta imagem/documento de redação com MÁXIMA PRECISÃO.\n\nInstruções importantes:\n1. Extraia TODO o texto visível, palavra por palavra\n2. Mantenha a formatação EXATA: parágrafos, quebras de linha, pontuação\n3. Preserve maiúsculas e minúsculas como aparecem\n4. NÃO adicione comentários, análises ou formatação extra\n5. NÃO corrija erros ortográficos ou gramaticais do texto original\n6. Se houver texto ilegível, use [?] no local\n7. Retorne APENAS o texto extraído\n\nComece a extração agora:'
               },
               {
                 type: 'image_url',
@@ -59,6 +59,7 @@ serve(async (req) => {
             ]
           }
         ],
+        temperature: 0.1,
       }),
     });
 
