@@ -7,10 +7,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { GraduationCap, ArrowLeft, User, CreditCard, Settings as SettingsIcon, Check, Crown } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { GraduationCap, ArrowLeft, User, CreditCard, Settings as SettingsIcon, Check, Crown, Moon, Sun, Monitor } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useSubscription } from "@/hooks/use-subscription";
+import { useTheme } from "@/components/ThemeProvider";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -19,8 +22,11 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [bio, setBio] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const { theme, setTheme } = useTheme();
   const { status: subscriptionStatus, createCheckout, openCustomerPortal } = useSubscription();
 
   const PLAN_PRICES: Record<string, string> = {
@@ -29,7 +35,6 @@ const Settings = () => {
   };
 
   useEffect(() => {
-    // Check for checkout status
     const checkoutStatus = searchParams.get('checkout');
     if (checkoutStatus === 'canceled') {
       toast({
@@ -57,13 +62,19 @@ const Settings = () => {
 
       if (profileData) {
         setProfile(profileData);
+        setFullName(profileData.full_name || "");
+        setBio(profileData.bio || "");
+        setAvatarUrl(profileData.avatar_url || "");
+        if (profileData.theme_preference) {
+          setTheme(profileData.theme_preference as "light" | "dark" | "system");
+        }
       }
 
       setLoading(false);
     };
 
     loadProfile();
-  }, [navigate, searchParams, setSearchParams, toast]);
+  }, [navigate, searchParams, setSearchParams, toast, setTheme]);
 
   const handleUpdateProfile = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -71,7 +82,12 @@ const Settings = () => {
 
     const { error } = await supabase
       .from('profiles')
-      .update({ email })
+      .update({ 
+        email,
+        full_name: fullName,
+        bio: bio,
+        avatar_url: avatarUrl,
+      })
       .eq('user_id', session.user.id);
 
     if (error) {
@@ -113,7 +129,26 @@ const Settings = () => {
     });
   };
 
-  const handleSavePreferences = () => {
+  const handleSavePreferences = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        theme_preference: theme,
+      })
+      .eq('user_id', session.user.id);
+
+    if (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar preferências.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Preferências salvas!",
       description: "Suas preferências foram atualizadas com sucesso.",
@@ -151,6 +186,8 @@ const Settings = () => {
         "Análise detalhada",
         "Histórico completo",
         "Suporte prioritário",
+        "Insights de desempenho",
+        "Simulados de treino",
       ],
       current: subscriptionStatus.plan === "standard",
       buttonText: subscriptionStatus.plan === "standard" ? "Plano Atual" : "Assinar",
@@ -168,8 +205,9 @@ const Settings = () => {
         "Leitura de imagens e PDFs",
         "Histórico ilimitado",
         "Suporte VIP 24/7",
+        "Insights de desempenho",
+        "Simulados de treino",
         "Relatórios de evolução",
-        "Simulados exclusivos",
       ],
       current: subscriptionStatus.plan === "pro",
       buttonText: subscriptionStatus.plan === "pro" ? "Plano Atual" : "Começar Teste Grátis",
@@ -184,6 +222,13 @@ const Settings = () => {
       </div>
     );
   }
+
+  const getInitials = () => {
+    if (fullName) {
+      return fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return email.slice(0, 2).toUpperCase();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background">
@@ -232,16 +277,66 @@ const Settings = () => {
             <Card className="p-6">
               <h2 className="text-xl font-bold mb-6">Informações do Perfil</h2>
               
-              <div className="space-y-4 max-w-md">
+              <div className="space-y-6 max-w-2xl">
+                <div className="flex items-center gap-6">
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage src={avatarUrl} alt={fullName || email} />
+                    <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <Label htmlFor="avatar">URL da Foto de Perfil</Label>
+                    <Input
+                      id="avatar"
+                      type="url"
+                      value={avatarUrl}
+                      onChange={(e) => setAvatarUrl(e.target.value)}
+                      placeholder="https://exemplo.com/foto.jpg"
+                      className="mt-2"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Cole a URL de uma imagem online
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fullname">Nome Completo</Label>
+                    <Input
+                      id="fullname"
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Seu nome completo"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      disabled
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="seu@email.com"
+                  <Label htmlFor="bio">Bio</Label>
+                  <Textarea
+                    id="bio"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Conte um pouco sobre você..."
+                    rows={4}
+                    maxLength={300}
                   />
+                  <p className="text-xs text-muted-foreground text-right">
+                    {bio.length}/300 caracteres
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -368,7 +463,52 @@ const Settings = () => {
 
           <TabsContent value="settings" className="space-y-6">
             <Card className="p-6">
-              <h2 className="text-xl font-bold mb-6">Preferências do Site</h2>
+              <h2 className="text-xl font-bold mb-6">Aparência</h2>
+              
+              <div className="space-y-6 max-w-md">
+                <div className="space-y-3">
+                  <Label>Tema</Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Button
+                      variant={theme === "light" ? "default" : "outline"}
+                      className="flex flex-col gap-2 h-auto py-3"
+                      onClick={() => setTheme("light")}
+                    >
+                      <Sun className="w-5 h-5" />
+                      <span className="text-xs">Claro</span>
+                    </Button>
+                    <Button
+                      variant={theme === "dark" ? "default" : "outline"}
+                      className="flex flex-col gap-2 h-auto py-3"
+                      onClick={() => setTheme("dark")}
+                    >
+                      <Moon className="w-5 h-5" />
+                      <span className="text-xs">Escuro</span>
+                    </Button>
+                    <Button
+                      variant={theme === "system" ? "default" : "outline"}
+                      className="flex flex-col gap-2 h-auto py-3"
+                      onClick={() => setTheme("system")}
+                    >
+                      <Monitor className="w-5 h-5" />
+                      <span className="text-xs">Sistema</span>
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Escolha como o Redator aparece para você
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <Button className="w-full" onClick={handleSavePreferences}>
+                    Salvar Preferências
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <h2 className="text-xl font-bold mb-6">Notificações</h2>
               
               <div className="space-y-6 max-w-md">
                 <div className="flex items-center justify-between">
@@ -383,26 +523,6 @@ const Settings = () => {
                     checked={emailNotifications}
                     onCheckedChange={setEmailNotifications}
                   />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="darkmode">Modo Escuro</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Alterne entre tema claro e escuro
-                    </p>
-                  </div>
-                  <Switch
-                    id="darkmode"
-                    checked={darkMode}
-                    onCheckedChange={setDarkMode}
-                  />
-                </div>
-
-                <div className="pt-4 border-t">
-                  <Button className="w-full" onClick={handleSavePreferences}>
-                    Salvar Preferências
-                  </Button>
                 </div>
               </div>
             </Card>
