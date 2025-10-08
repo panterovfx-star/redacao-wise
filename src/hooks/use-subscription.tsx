@@ -76,7 +76,24 @@ export const useSubscription = () => {
     try {
       const { data, error } = await supabase.functions.invoke('customer-portal');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Customer portal error:', error);
+        throw new Error(error.message || "Erro ao acessar o portal");
+      }
+
+      if (data?.error) {
+        // Handle error from the edge function
+        if (data.error.includes("No Stripe customer found")) {
+          toast({
+            title: "Cadastro necessário",
+            description: "Você precisa realizar uma assinatura primeiro. Por favor, escolha um plano acima.",
+            variant: "destructive",
+          });
+        } else {
+          throw new Error(data.error);
+        }
+        return;
+      }
 
       if (data?.url) {
         window.open(data.url, '_blank');
@@ -85,12 +102,14 @@ export const useSubscription = () => {
           title: "Redirecionando...",
           description: "Você será redirecionado para o portal de gerenciamento.",
         });
+      } else {
+        throw new Error("URL do portal não recebida");
       }
     } catch (error: any) {
       console.error('Error opening customer portal:', error);
       toast({
-        title: "Erro",
-        description: error.message || "Não foi possível abrir o portal de gerenciamento.",
+        title: "Erro ao abrir portal",
+        description: error.message || "Não foi possível abrir o portal de gerenciamento. Tente novamente.",
         variant: "destructive",
       });
     }

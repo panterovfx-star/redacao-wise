@@ -342,9 +342,11 @@ const Settings = () => {
                   ? "Gerencie sua assinatura e métodos de pagamento através do portal do cliente." 
                   : profile?.manual_plan_override 
                   ? "Seu plano foi atribuído manualmente por um administrador."
+                  : (subscriptionStatus.plan === "standard" || subscriptionStatus.plan === "pro")
+                  ? "Configure seu método de pagamento através do portal do cliente."
                   : "Seu pagamento é processado de forma segura através do Stripe."}
               </p>
-              {subscriptionStatus.subscribed ? (
+              {(subscriptionStatus.subscribed || subscriptionStatus.plan === "standard" || subscriptionStatus.plan === "pro") && !profile?.manual_plan_override ? (
                 <Button 
                   variant="outline" 
                   size="sm"
