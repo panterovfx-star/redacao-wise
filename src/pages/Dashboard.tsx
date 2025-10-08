@@ -250,13 +250,27 @@ const Dashboard = () => {
                   Renovação: {new Date(subscriptionStatus.subscription_end).toLocaleDateString('pt-BR')}
                 </p>
               )}
-              <Button
-                variant={subscriptionStatus.plan === 'free' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => navigate("/settings")}
-              >
-                {subscriptionStatus.plan === 'free' ? 'Ver Planos' : 'Gerenciar Assinatura'}
-              </Button>
+              {subscriptionStatus.plan === 'free' ? (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => navigate("/settings?tab=plan")}
+                >
+                  Ver Planos
+                </Button>
+              ) : subscriptionStatus.subscribed ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/settings?tab=plan")}
+                >
+                  Gerenciar Assinatura
+                </Button>
+              ) : (
+                <div className="text-xs text-muted-foreground">
+                  Plano atribuído pelo administrador
+                </div>
+              )}
             </div>
           </div>
         </Card>

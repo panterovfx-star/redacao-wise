@@ -63,7 +63,7 @@ const Settings = () => {
     };
 
     loadProfile();
-  }, [navigate]);
+  }, [navigate, searchParams, setSearchParams, toast]);
 
   const handleUpdateProfile = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -208,7 +208,7 @@ const Settings = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs defaultValue={searchParams.get('tab') || 'profile'} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 max-w-md">
             <TabsTrigger value="profile" className="text-xs sm:text-sm">
               <User className="w-4 h-4 mr-1 sm:mr-2" />
@@ -333,6 +333,8 @@ const Settings = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 {subscriptionStatus.subscribed 
                   ? "Gerencie sua assinatura e métodos de pagamento através do portal do cliente." 
+                  : profile?.manual_plan_override 
+                  ? "Seu plano foi atribuído manualmente por um administrador."
                   : "Seu pagamento é processado de forma segura através do Stripe."}
               </p>
               {subscriptionStatus.subscribed ? (
@@ -343,6 +345,10 @@ const Settings = () => {
                 >
                   Gerenciar Assinatura
                 </Button>
+              ) : profile?.manual_plan_override ? (
+                <p className="text-sm text-muted-foreground">
+                  Entre em contato com o administrador para alterar seu plano.
+                </p>
               ) : (
                 <p className="text-sm text-muted-foreground">
                   Assine um plano acima para acessar o portal de gerenciamento.
