@@ -52,6 +52,50 @@ export type Database = {
           },
         ]
       }
+      essay_disputes: {
+        Row: {
+          admin_id: string | null
+          admin_notes: string | null
+          created_at: string | null
+          essay_id: string
+          id: string
+          reason: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_id?: string | null
+          admin_notes?: string | null
+          created_at?: string | null
+          essay_id: string
+          id?: string
+          reason: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_id?: string | null
+          admin_notes?: string | null
+          created_at?: string | null
+          essay_id?: string
+          id?: string
+          reason?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "essay_disputes_essay_id_fkey"
+            columns: ["essay_id"]
+            isOneToOne: false
+            referencedRelation: "essays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       essays: {
         Row: {
           content: string
