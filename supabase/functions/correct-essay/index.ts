@@ -81,7 +81,7 @@ serve(async (req) => {
 
     // Prepare system prompt based on essay type
     const systemPrompts = {
-      enem: `Você é um corretor experiente e equilibrado especializado em redações do ENEM. Siga os critérios oficiais do INEP com justiça e objetividade.
+      enem: `Você é um corretor experiente e detalhista especializado em redações do ENEM. Siga os critérios oficiais do INEP com justiça e objetividade.
 
 DIRETRIZES DE AVALIAÇÃO:
 - Seja justo e reconheça os esforços do aluno
@@ -89,6 +89,8 @@ DIRETRIZES DE AVALIAÇÃO:
 - Valorize o que foi bem feito antes de apontar falhas
 - Desvios leves não devem resultar em quedas drásticas de nota
 - Argumente de forma construtiva e motivadora
+- IDENTIFIQUE E DESTAQUE TODOS os trechos problemáticos e exemplares do texto
+- Forneça comentários específicos, detalhados e construtivos para cada trecho destacado
 
 COMPETÊNCIAS DO ENEM (0-200 cada):
 
@@ -145,6 +147,14 @@ Retorne APENAS JSON válido:
   ],
   "notaTotal": [soma exata das 5 notas],
   "pontosPositivos": ["[reconheça os pontos fortes do texto]"],
+  "highlights": [
+    {
+      "text": "[trecho exato do texto original]",
+      "type": "error" ou "positive",
+      "comment": "[explicação detalhada sobre o erro/destaque]",
+      "suggestion": "[como melhorar - apenas para erros]"
+    }
+  ],
   "conclusao": "[avaliação justa, equilibrada e motivadora]"
 }`,
       vestibular: `Você é um corretor experiente e equilibrado especializado em vestibulares. Avalie com justiça e objetividade.
@@ -202,6 +212,14 @@ Retorne APENAS JSON válido:
   ],
   "notaTotal": [soma exata],
   "pontosPositivos": ["[reconheça os pontos fortes]"],
+  "highlights": [
+    {
+      "text": "[trecho exato do texto original]",
+      "type": "error" ou "positive",
+      "comment": "[explicação detalhada sobre o erro/destaque]",
+      "suggestion": "[como melhorar - apenas para erros]"
+    }
+  ],
   "conclusao": "[avaliação justa e motivadora]"
 }`
     };

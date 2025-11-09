@@ -6,9 +6,11 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { GraduationCap, ArrowLeft, Loader2, Send, Upload, FileImage, Crown, CheckCircle2 } from "lucide-react";
+import { GraduationCap, ArrowLeft, Loader2, Send, Upload, FileImage, Crown, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useSubscription } from "@/hooks/use-subscription";
+import { EssayHighlights } from "@/components/EssayHighlights";
+import { DisputeCorrectionDialog } from "@/components/DisputeCorrectionDialog";
 
 const EssayCorrection = () => {
   const navigate = useNavigate();
@@ -24,6 +26,8 @@ const EssayCorrection = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [extractingText, setExtractingText] = useState(false);
   const [textExtracted, setTextExtracted] = useState(false);
+  const [essayId, setEssayId] = useState<string | null>(null);
+  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { status: subscriptionStatus } = useSubscription();
@@ -47,6 +51,7 @@ const EssayCorrection = () => {
       setTheme(state.essayData.theme || "");
       setContent(state.essayData.content || "");
       setCorrection(state.correction);
+      setEssayId(state.essayData.id || null);
     } else if (state?.practiceMode && state?.theme) {
       // Pre-fill practice theme
       setTheme(state.theme);
@@ -269,6 +274,10 @@ const EssayCorrection = () => {
               <p className="text-sm text-muted-foreground">{correction.conclusao}</p>
             </Card>
           )}
+
+          {correction.highlights && correction.highlights.length > 0 && (
+            <EssayHighlights highlights={correction.highlights} essayContent={content} />
+          )}
         </div>
       );
     } else {
@@ -315,6 +324,10 @@ const EssayCorrection = () => {
               <h4 className="font-semibold mb-2">Conclusão</h4>
               <p className="text-sm text-muted-foreground">{correction.conclusao}</p>
             </Card>
+          )}
+
+          {correction.highlights && correction.highlights.length > 0 && (
+            <EssayHighlights highlights={correction.highlights} essayContent={content} />
           )}
         </div>
       );
@@ -519,7 +532,20 @@ const EssayCorrection = () => {
                 </div>
               ) : correction ? (
                 <div>
-                  <h2 className="text-2xl font-bold mb-6">Resultado da Correção</h2>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold">Resultado da Correção</h2>
+                    {essayId && user && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDisputeDialogOpen(true)}
+                        className="gap-2"
+                      >
+                        <AlertTriangle className="w-4 h-4" />
+                        Contestar Correção
+                      </Button>
+                    )}
+                  </div>
                   {renderCorrection()}
                 </div>
               ) : (
@@ -535,6 +561,15 @@ const EssayCorrection = () => {
           </div>
         </div>
       </div>
+
+      {essayId && user && (
+        <DisputeCorrectionDialog
+          essayId={essayId}
+          userId={user.id}
+          open={disputeDialogOpen}
+          onOpenChange={setDisputeDialogOpen}
+        />
+      )}
     </div>
   );
 };

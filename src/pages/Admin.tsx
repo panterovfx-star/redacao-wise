@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { GraduationCap, ArrowLeft, Users, FileText, CreditCard, Settings, Brain, TrendingUp } from "lucide-react";
+import { GraduationCap, ArrowLeft, Users, FileText, CreditCard, Settings, Brain, TrendingUp, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -30,6 +30,7 @@ const Admin = () => {
   });
   const [users, setUsers] = useState<any[]>([]);
   const [essays, setEssays] = useState<any[]>([]);
+  const [disputes, setDisputes] = useState<any[]>([]);
   const [selectedEssay, setSelectedEssay] = useState<any>(null);
   const [feedbackScore, setFeedbackScore] = useState("");
   const [feedbackNotes, setFeedbackNotes] = useState("");
@@ -138,6 +139,30 @@ const Admin = () => {
       })) || [];
 
       setEssays(essaysWithEmails);
+      
+      // Fetch disputes
+      const { data: disputesData } = await supabase
+        .from('essay_disputes')
+        .select(`
+          *,
+          essays:essay_id (
+            id,
+            title,
+            essay_type,
+            score,
+            content,
+            correction_result
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      // Add profile emails to disputes
+      const disputesWithEmails = disputesData?.map(dispute => ({
+        ...dispute,
+        profiles: allProfiles?.find(p => p.user_id === dispute.user_id)
+      })) || [];
+
+      setDisputes(disputesWithEmails);
       setLoading(false);
     };
 
@@ -285,6 +310,80 @@ const Admin = () => {
     setFeedbackNotes("");
   };
 
+  const handleDisputeAction = async (disputeId: string, action: 'approved' | 'rejected', adminNotes?: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const dispute = disputes.find(d => d.id === disputeId);
+    if (!dispute) return;
+
+    // Update dispute status
+    const { error: disputeError } = await supabase
+      .from('essay_disputes')
+      .update({
+        status: action,
+        admin_id: session.user.id,
+        admin_notes: adminNotes || null,
+      })
+      .eq('id', disputeId);
+
+    if (disputeError) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível processar a disputa.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If approved, create training feedback
+    if (action === 'approved' && dispute.essays) {
+      await supabase
+        .from('ai_training_feedback')
+        .insert({
+          essay_id: dispute.essay_id,
+          admin_id: session.user.id,
+          original_score: dispute.essays.score,
+          corrected_score: dispute.essays.score, // Admin can adjust later
+          feedback_notes: `Disputa aprovada: ${dispute.reason}`,
+        });
+    }
+
+    toast({
+      title: action === 'approved' ? "Disputa aprovada!" : "Disputa rejeitada",
+      description: action === 'approved' 
+        ? "Feedback registrado para treino da IA."
+        : "A disputa foi rejeitada.",
+    });
+
+    // Refresh disputes
+    const { data: disputesData } = await supabase
+      .from('essay_disputes')
+      .select(`
+        *,
+        essays:essay_id (
+          id,
+          title,
+          essay_type,
+          score,
+          content,
+          correction_result
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    const { data: allProfiles } = await supabase
+      .from('profiles')
+      .select('user_id, email');
+
+    const disputesWithEmails = disputesData?.map(dispute => ({
+      ...dispute,
+      profiles: allProfiles?.find(p => p.user_id === dispute.user_id)
+    })) || [];
+
+    setDisputes(disputesWithEmails);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -323,9 +422,17 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-full">
+          <TabsList className="grid w-full grid-cols-4 max-w-full">
             <TabsTrigger value="overview" className="text-xs sm:text-sm">Visão Geral</TabsTrigger>
             <TabsTrigger value="users" className="text-xs sm:text-sm">Usuários</TabsTrigger>
+            <TabsTrigger value="disputes" className="text-xs sm:text-sm">
+              Disputas 
+              {disputes.filter(d => d.status === 'pending').length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {disputes.filter(d => d.status === 'pending').length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="training" className="text-xs sm:text-sm">Treinar IA</TabsTrigger>
           </TabsList>
 
@@ -575,6 +682,121 @@ const Admin = () => {
                         </TableRow>
                       );
                     })}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="disputes" className="space-y-4">
+            <Card className="p-6">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5" />
+                Contestações de Correções
+              </h2>
+              <p className="text-muted-foreground mb-6 text-sm">
+                Revise as contestações dos alunos e decida se devem ser aprovadas para treino da IA.
+              </p>
+              <div className="overflow-x-auto -mx-6 px-6">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Aluno</TableHead>
+                      <TableHead>Redação</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Nota</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {disputes.map((dispute) => (
+                      <TableRow key={dispute.id}>
+                        <TableCell className="font-medium">
+                          {dispute.profiles?.email || 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {dispute.essays?.title || 'Sem título'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {dispute.essays?.essay_type === 'enem' ? 'ENEM' : 'Vestibular'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{dispute.essays?.score || 'N/A'}</TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            dispute.status === 'pending' ? 'secondary' :
+                            dispute.status === 'approved' ? 'default' : 'destructive'
+                          }>
+                            {dispute.status === 'pending' ? 'Pendente' :
+                             dispute.status === 'approved' ? 'Aprovada' : 'Rejeitada'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(dispute.created_at).toLocaleDateString('pt-BR')}
+                        </TableCell>
+                        <TableCell>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                Ver Detalhes
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                              <DialogHeader>
+                                <DialogTitle>Detalhes da Contestação</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <h4 className="font-semibold mb-2">Informações</h4>
+                                  <p className="text-sm"><strong>Aluno:</strong> {dispute.profiles?.email}</p>
+                                  <p className="text-sm"><strong>Redação:</strong> {dispute.essays?.title}</p>
+                                  <p className="text-sm"><strong>Nota da IA:</strong> {dispute.essays?.score}</p>
+                                </div>
+                                
+                                <div>
+                                  <h4 className="font-semibold mb-2">Motivo da Contestação</h4>
+                                  <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded">{dispute.reason}</p>
+                                </div>
+
+                                <div>
+                                  <h4 className="font-semibold mb-2">Texto da Redação</h4>
+                                  <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded max-h-[200px] overflow-y-auto">
+                                    {dispute.essays?.content}
+                                  </p>
+                                </div>
+
+                                {dispute.status === 'pending' && (
+                                  <div className="flex gap-2 pt-4">
+                                    <Button
+                                      variant="default"
+                                      onClick={() => handleDisputeAction(dispute.id, 'approved')}
+                                    >
+                                      Aprovar Contestação
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() => handleDisputeAction(dispute.id, 'rejected')}
+                                    >
+                                      Rejeitar
+                                    </Button>
+                                  </div>
+                                )}
+
+                                {dispute.status !== 'pending' && dispute.admin_notes && (
+                                  <div>
+                                    <h4 className="font-semibold mb-2">Notas do Admin</h4>
+                                    <p className="text-sm bg-muted p-3 rounded">{dispute.admin_notes}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
