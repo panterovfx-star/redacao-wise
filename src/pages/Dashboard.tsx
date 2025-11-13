@@ -131,20 +131,20 @@ const Dashboard = () => {
               Redator
             </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2">
             {isAdmin && (
-              <Button onClick={() => navigate("/admin")} variant="secondary" size="sm">
-                <Shield className="w-4 h-4 mr-2" />
-                Admin
+              <Button onClick={() => navigate("/admin")} variant="secondary" size="sm" className="px-2 sm:px-3">
+                <Shield className="w-4 h-4" />
+                <span className="hidden sm:inline ml-2">Admin</span>
               </Button>
             )}
-            <Button onClick={() => navigate("/settings")} variant="ghost" size="sm">
-              <Settings className="w-4 h-4 mr-2" />
-              Configurações
+            <Button onClick={() => navigate("/settings")} variant="ghost" size="sm" className="px-2 sm:px-3">
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline ml-2">Configurações</span>
             </Button>
-            <Button onClick={handleLogout} variant="outline" size="sm">
-              <LogOut className="w-4 h-4 mr-2" />
-              Sair
+            <Button onClick={handleLogout} variant="outline" size="sm" className="px-2 sm:px-3">
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline ml-2">Sair</span>
             </Button>
           </div>
         </div>

@@ -92,11 +92,11 @@ const Index = () => {
               Redator
             </span>
           </div>
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => navigate("/auth")}>
+          <div className="flex gap-1 sm:gap-2">
+            <Button variant="ghost" onClick={() => navigate("/auth")} size="sm" className="text-xs sm:text-sm px-2 sm:px-4">
               Entrar
             </Button>
-            <Button onClick={() => navigate("/auth")}>
+            <Button onClick={() => navigate("/auth")} size="sm" className="text-xs sm:text-sm px-2 sm:px-4">
               Começar Grátis
             </Button>
           </div>

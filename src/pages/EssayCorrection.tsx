@@ -341,9 +341,9 @@ const EssayCorrection = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background">
       <nav className="border-b border-border bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
+          <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="px-2 sm:px-3">
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline ml-2">Voltar</span>
           </Button>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-hero rounded-lg flex items-center justify-center">
