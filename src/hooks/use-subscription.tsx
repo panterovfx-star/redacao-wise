@@ -48,25 +48,34 @@ export const useSubscription = () => {
 
   const createCheckout = async (priceId: string, enableTrial: boolean = false) => {
     try {
+      console.log('Creating checkout for price:', priceId);
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { priceId, enableTrial }
       });
 
-      if (error) throw error;
+      console.log('Checkout response:', { data, error });
+
+      if (error) {
+        console.error('Checkout error:', error);
+        throw error;
+      }
 
       if (data?.url) {
+        console.log('Opening checkout URL:', data.url);
         window.open(data.url, '_blank');
         
         toast({
           title: "Redirecionando...",
           description: "Você será redirecionado para o checkout do Stripe.",
         });
+      } else {
+        throw new Error('URL de checkout não retornada');
       }
     } catch (error: any) {
       console.error('Error creating checkout:', error);
       toast({
         title: "Erro ao criar checkout",
-        description: error.message || "Não foi possível criar a sessão de checkout.",
+        description: error.message || "Não foi possível criar a sessão de checkout. Tente novamente.",
         variant: "destructive",
       });
     }

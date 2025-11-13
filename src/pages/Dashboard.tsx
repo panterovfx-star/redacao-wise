@@ -243,8 +243,9 @@ const Dashboard = () => {
               {profile && (
                 <p className="text-xs text-muted-foreground mb-3">
                   <span className="font-medium">{profile.daily_corrections_used || 0}</span> correções usadas hoje
-                  {subscriptionStatus.plan === 'free' && ' de 1'}
-                  {subscriptionStatus.plan === 'standard' && ' de 10'}
+                  {subscriptionStatus.plan === 'free' && ` • ${Math.max(0, 1 - (profile.daily_corrections_used || 0))} restante`}
+                  {subscriptionStatus.plan === 'standard' && ` • ${Math.max(0, 10 - (profile.daily_corrections_used || 0))} restantes`}
+                  {subscriptionStatus.plan === 'pro' && ' • ilimitadas'}
                 </p>
               )}
               {subscriptionStatus.subscription_end && (

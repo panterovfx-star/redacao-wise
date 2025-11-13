@@ -183,6 +183,9 @@ const EssayCorrection = () => {
         .single();
 
       if (essayError) throw essayError;
+      
+      // Store the essay ID for dispute functionality
+      setEssayId(essayData.id);
 
       // Call the correction function
       const { data, error } = await supabase.functions.invoke('correct-essay', {
