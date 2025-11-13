@@ -317,71 +317,65 @@ const Admin = () => {
     const dispute = disputes.find(d => d.id === disputeId);
     if (!dispute) return;
 
-    // Update dispute status
-    const { error: disputeError } = await supabase
-      .from('essay_disputes')
-      .update({
-        status: action,
-        admin_id: session.user.id,
-        admin_notes: adminNotes || null,
-      })
-      .eq('id', disputeId);
+    setLoading(true);
 
-    if (disputeError) {
+    try {
+      // Call the process-dispute edge function
+      const { data, error } = await supabase.functions.invoke('process-dispute', {
+        body: {
+          disputeId,
+          action,
+          adminNotes,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: action === 'approved' ? "Disputa aprovada!" : "Disputa rejeitada",
+        description: action === 'approved' 
+          ? data.recorrectionError 
+            ? "Disputa aprovada. Erro na recorreção automática, tente manualmente."
+            : "A redação foi recorrigida automaticamente!"
+          : "A disputa foi rejeitada.",
+      });
+
+      // Refresh disputes
+      const { data: disputesData } = await supabase
+        .from('essay_disputes')
+        .select(`
+          *,
+          essays:essay_id (
+            id,
+            title,
+            essay_type,
+            score,
+            content,
+            correction_result
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      const { data: allProfiles } = await supabase
+        .from('profiles')
+        .select('user_id, email');
+
+      const disputesWithEmails = disputesData?.map(dispute => ({
+        ...dispute,
+        profiles: allProfiles?.find(p => p.user_id === dispute.user_id)
+      })) || [];
+
+      setDisputes(disputesWithEmails);
+    } catch (error: any) {
+      console.error('Error processing dispute:', error);
       toast({
         title: "Erro",
         description: "Não foi possível processar a disputa.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    // If approved, create training feedback
-    if (action === 'approved' && dispute.essays) {
-      await supabase
-        .from('ai_training_feedback')
-        .insert({
-          essay_id: dispute.essay_id,
-          admin_id: session.user.id,
-          original_score: dispute.essays.score,
-          corrected_score: dispute.essays.score, // Admin can adjust later
-          feedback_notes: `Disputa aprovada: ${dispute.reason}`,
-        });
-    }
-
-    toast({
-      title: action === 'approved' ? "Disputa aprovada!" : "Disputa rejeitada",
-      description: action === 'approved' 
-        ? "Feedback registrado para treino da IA."
-        : "A disputa foi rejeitada.",
-    });
-
-    // Refresh disputes
-    const { data: disputesData } = await supabase
-      .from('essay_disputes')
-      .select(`
-        *,
-        essays:essay_id (
-          id,
-          title,
-          essay_type,
-          score,
-          content,
-          correction_result
-        )
-      `)
-      .order('created_at', { ascending: false });
-
-    const { data: allProfiles } = await supabase
-      .from('profiles')
-      .select('user_id, email');
-
-    const disputesWithEmails = disputesData?.map(dispute => ({
-      ...dispute,
-      profiles: allProfiles?.find(p => p.user_id === dispute.user_id)
-    })) || [];
-
-    setDisputes(disputesWithEmails);
   };
 
   if (loading) {

@@ -35,6 +35,15 @@ export const DisputeCorrectionDialog = ({
 
     setLoading(true);
     try {
+      // Update essay status to pending when dispute is created
+      const { error: essayError } = await supabase
+        .from("essays")
+        .update({ status: "pending" })
+        .eq("id", essayId);
+
+      if (essayError) throw essayError;
+
+      // Create the dispute
       const { error } = await supabase.from("essay_disputes").insert({
         essay_id: essayId,
         user_id: userId,
@@ -45,7 +54,7 @@ export const DisputeCorrectionDialog = ({
 
       toast({
         title: "Contestação enviada!",
-        description: "Sua solicitação foi enviada para análise dos administradores.",
+        description: "Sua redação está pendente de revisão pelos administradores.",
       });
 
       setReason("");
