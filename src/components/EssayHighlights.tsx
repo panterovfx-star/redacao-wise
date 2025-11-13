@@ -71,8 +71,8 @@ export const EssayHighlights = ({ highlights, essayContent }: EssayHighlightsPro
                 key={index}
                 className={`relative group cursor-help px-1 rounded ${
                   isError 
-                    ? "bg-red-100 dark:bg-red-900/30 border-b-2 border-red-500" 
-                    : "bg-green-100 dark:bg-green-900/30 border-b-2 border-green-500"
+                    ? "bg-red-100 dark:bg-red-950 text-red-900 dark:text-red-100 border-b-2 border-red-600 dark:border-red-500" 
+                    : "bg-green-100 dark:bg-green-950 text-green-900 dark:text-green-100 border-b-2 border-green-600 dark:border-green-500"
                 }`}
                 title={segment.highlight.comment}
               >

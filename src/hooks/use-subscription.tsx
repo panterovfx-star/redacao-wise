@@ -61,13 +61,9 @@ export const useSubscription = () => {
       }
 
       if (data?.url) {
-        console.log('Opening checkout URL:', data.url);
-        window.open(data.url, '_blank');
-        
-        toast({
-          title: "Redirecionando...",
-          description: "Você será redirecionado para o checkout do Stripe.",
-        });
+        console.log('Redirecting to checkout URL:', data.url);
+        // Use location.href instead of window.open for better mobile compatibility
+        window.location.href = data.url;
       } else {
         throw new Error('URL de checkout não retornada');
       }
@@ -105,12 +101,8 @@ export const useSubscription = () => {
       }
 
       if (data?.url) {
-        window.open(data.url, '_blank');
-        
-        toast({
-          title: "Redirecionando...",
-          description: "Você será redirecionado para o portal de gerenciamento.",
-        });
+        // Use location.href instead of window.open for better mobile compatibility
+        window.location.href = data.url;
       } else {
         throw new Error("URL do portal não recebida");
       }
