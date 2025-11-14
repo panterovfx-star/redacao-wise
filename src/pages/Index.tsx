@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { GraduationCap, Check, Zap, Crown, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,10 +44,12 @@ const Index = () => {
       icon: Check,
       cta: "Começar Grátis",
       variant: "outline" as const,
+      priceId: null,
+      enableTrial: false,
     },
     {
       name: "Standard",
-      price: "R$ 29,90",
+      price: "R$ 24,99",
       period: "/mês",
       description: "Para quem estuda regularmente",
       features: [
@@ -59,11 +62,14 @@ const Index = () => {
       cta: "Assinar Standard",
       variant: "secondary" as const,
       popular: true,
+      priceId: "price_1SFkWeE0zB1huP7q9QnjnTq8",
+      enableTrial: false,
     },
     {
       name: "Pro",
-      price: "R$ 49,90",
+      price: "R$ 39,99",
       period: "/mês",
+      badge: "7 dias grátis",
       description: "Para máximo desempenho",
       features: [
         "Correções ilimitadas",
@@ -73,9 +79,11 @@ const Index = () => {
         "Suporte prioritário",
       ],
       icon: Crown,
-      cta: "Assinar Pro",
+      cta: "Começar Teste Grátis",
       variant: "default" as const,
       highlight: true,
+      priceId: "price_1SFkWoE0zB1huP7qh4vZSf6G",
+      enableTrial: true,
     },
   ];
 
@@ -203,7 +211,14 @@ const Index = () => {
               
               <div className="text-center mb-6">
                 <plan.icon className="w-12 h-12 mx-auto mb-4 text-primary" />
-                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <h3 className="text-2xl font-bold">{plan.name}</h3>
+                  {plan.badge && (
+                    <Badge variant="secondary" className="text-xs">
+                      {plan.badge}
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-muted-foreground text-sm mb-4">
                   {plan.description}
                 </p>
