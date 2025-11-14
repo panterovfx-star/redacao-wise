@@ -30,6 +30,12 @@ const Settings = () => {
   const { status: subscriptionStatus, createCheckout, openCustomerPortal } = useSubscription();
 
   const PLAN_PRICES: Record<string, string> = {
+    free: "R$ 0/mês",
+    standard: "R$ 24,99/mês",
+    pro: "R$ 39,99/mês",
+  };
+
+  const PLAN_PRICE_IDS: Record<string, string> = {
     standard: 'price_1SFkWeE0zB1huP7q9QnjnTq8',
     pro: 'price_1SFkWoE0zB1huP7qh4vZSf6G'
   };
@@ -107,7 +113,7 @@ const Settings = () => {
 
   const handleSubscribe = async (planName: string, withTrial: boolean = false) => {
     const planKey = planName.toLowerCase();
-    const priceId = PLAN_PRICES[planKey];
+    const priceId = PLAN_PRICE_IDS[planKey];
     
     if (!priceId) {
       toast({
@@ -202,10 +208,11 @@ const Settings = () => {
       current: subscriptionStatus.plan === "free",
       buttonText: "Plano Gratuito",
       disabled: true,
+      enableTrial: false,
     },
     {
       name: "Standard",
-      price: "R$ 29,90",
+      price: "R$ 24,99",
       period: "/mês",
       features: [
         "10 correções por dia",
@@ -219,13 +226,14 @@ const Settings = () => {
       current: subscriptionStatus.plan === "standard",
       buttonText: subscriptionStatus.plan === "standard" ? "Plano Atual" : "Assinar",
       popular: true,
+      enableTrial: false,
     },
     {
       name: "Pro",
-      price: "R$ 59,90",
+      price: "R$ 39,99",
       period: "/mês",
+      badge: "7 dias grátis",
       features: [
-        "✨ 7 dias grátis para testar",
         "Correções ilimitadas",
         "Correção ENEM e Vestibular",
         "Análise completa com IA avançada",
@@ -239,6 +247,7 @@ const Settings = () => {
       current: subscriptionStatus.plan === "pro",
       buttonText: subscriptionStatus.plan === "pro" ? "Plano Atual" : "Começar Teste Grátis",
       trial: true,
+      enableTrial: true,
     },
   ];
 
@@ -423,7 +432,14 @@ const Settings = () => {
                     )}
                     
                     <div className="text-center mb-6">
-                      <h3 className="text-lg font-bold mb-2">{plan.name}</h3>
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <h3 className="text-lg font-bold">{plan.name}</h3>
+                        {plan.badge && (
+                          <Badge variant="secondary" className="text-xs">
+                            {plan.badge}
+                          </Badge>
+                        )}
+                      </div>
                       <div className="flex items-end justify-center gap-1 mb-1">
                         <span className="text-3xl font-bold">{plan.price}</span>
                         <span className="text-muted-foreground text-sm mb-1">{plan.period}</span>
@@ -443,11 +459,11 @@ const Settings = () => {
                       className="w-full"
                       variant={plan.current ? "outline" : plan.popular ? "default" : "secondary"}
                       disabled={plan.current || plan.disabled}
-                      onClick={() => !plan.current && !plan.disabled && handleSubscribe(plan.name, plan.trial || false)}
+                      onClick={() => !plan.current && !plan.disabled && handleSubscribe(plan.name, plan.enableTrial || false)}
                     >
                       {plan.buttonText}
                     </Button>
-                    {plan.trial && !plan.current && (
+                    {plan.enableTrial && !plan.current && (
                       <p className="text-xs text-center text-muted-foreground mt-2">
                         Cancele a qualquer momento durante o período de teste
                       </p>
@@ -458,7 +474,24 @@ const Settings = () => {
             </Card>
 
             <Card className="p-6">
-              <h3 className="font-semibold mb-2">Informações de Pagamento</h3>
+              <h3 className="font-semibold mb-4">Informações de Pagamento</h3>
+              
+              {subscriptionStatus.subscribed && subscriptionStatus.subscription_end && (
+                <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                  <p className="text-sm font-medium mb-1">Próxima renovação</p>
+                  <p className="text-lg font-bold">
+                    {new Date(subscriptionStatus.subscription_end).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric'
+                    })}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Sua assinatura será renovada automaticamente
+                  </p>
+                </div>
+              )}
+              
               <p className="text-sm text-muted-foreground mb-4">
                 {subscriptionStatus.subscribed 
                   ? "Gerencie sua assinatura e métodos de pagamento através do portal do cliente." 
