@@ -1,11 +1,20 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const correctEssaySchema = z.object({
+  essayId: z.string().uuid(),
+  essayContent: z.string().min(100, "Conteúdo muito curto").max(15000, "Conteúdo muito longo"),
+  essayType: z.enum(['enem', 'vestibular'], { errorMap: () => ({ message: "Tipo de redação inválido" }) }),
+  theme: z.string().max(300, "Tema muito longo").optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -13,7 +22,24 @@ serve(async (req) => {
   }
 
   try {
-    const { essayId, essayContent, essayType, theme } = await req.json();
+    const body = await req.json();
+    
+    // Validate input
+    const validationResult = correctEssaySchema.safeParse(body);
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Dados inválidos',
+          details: validationResult.error.errors.map(e => e.message).join(', ')
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    
+    const { essayId, essayContent, essayType, theme } = validationResult.data;
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
