@@ -1,10 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Input validation schema
+const processDisputeSchema = z.object({
+  disputeId: z.string().uuid(),
+  action: z.enum(['approved', 'rejected'], { errorMap: () => ({ message: "Ação inválida" }) }),
+  adminNotes: z.string().max(2000, "Notas muito longas").optional(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,7 +20,24 @@ serve(async (req) => {
   }
 
   try {
-    const { disputeId, action, adminNotes } = await req.json();
+    const body = await req.json();
+    
+    // Validate input
+    const validationResult = processDisputeSchema.safeParse(body);
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Dados inválidos',
+          details: validationResult.error.errors.map(e => e.message).join(', ')
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    
+    const { disputeId, action, adminNotes } = validationResult.data;
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -148,9 +173,8 @@ serve(async (req) => {
       }
     );
   } catch (error: any) {
-    console.error('Error processing dispute:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Erro ao processar contestação' }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

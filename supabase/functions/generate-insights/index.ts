@@ -7,6 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// No additional input validation needed - this function takes no user input parameters
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -159,8 +161,7 @@ DIRETRIZES:
     );
 
   } catch (error) {
-    console.error('Error generating insights:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to generate insights';
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao gerar insights';
     return new Response(
       JSON.stringify({ error: errorMessage }), 
       {
