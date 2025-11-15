@@ -122,27 +122,64 @@ serve(async (req) => {
         throw updateEssayError;
       }
 
-      // Call correct-essay function to recorrect
-      const { data: correctionResult, error: correctionError } = await supabaseClient.functions.invoke(
-        'correct-essay',
-        {
-          body: {
-            essayId: essay.id,
-            essayContent: essay.content,
-            essayType: essay.essay_type,
-            theme: essay.theme,
-          },
-        }
-      );
+      // Call correct-essay function to recorrect using direct HTTP call
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const correctionResponse = await fetch(
+          `${supabaseUrl}/functions/v1/correct-essay`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': req.headers.get('Authorization')!,
+            },
+            body: JSON.stringify({
+              essayId: essay.id,
+              essayContent: essay.content,
+              essayType: essay.essay_type,
+              theme: essay.theme,
+            }),
+          }
+        );
 
-      if (correctionError) {
-        console.error('Error recorrecting essay:', correctionError);
-        // Don't throw here, the dispute is already updated
+        if (!correctionResponse.ok) {
+          const errorText = await correctionResponse.text();
+          console.error('Error recorrecting essay:', errorText);
+          // Don't throw here, the dispute is already updated
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              message: 'Disputa aprovada mas a recorreção falhou. Por favor, tente manualmente.',
+              recorrectionError: errorText 
+            }),
+            {
+              status: 200,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+
+        const correctionResult = await correctionResponse.json();
+
         return new Response(
           JSON.stringify({ 
             success: true, 
-            message: 'Dispute approved but recorrection failed. Please try manually.',
-            recorrectionError: correctionError.message 
+            action,
+            message: 'Disputa aprovada e redação recorrigida com sucesso',
+            correctionResult 
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      } catch (recorrectionError: any) {
+        console.error('Error recorrecting essay:', recorrectionError);
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Disputa aprovada mas a recorreção falhou. Por favor, tente manualmente.',
+            recorrectionError: recorrectionError.message 
           }),
           {
             status: 200,
@@ -151,18 +188,6 @@ serve(async (req) => {
         );
       }
 
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          action,
-          message: 'Dispute approved and essay recorrected successfully',
-          correctionResult 
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
     }
 
     return new Response(
