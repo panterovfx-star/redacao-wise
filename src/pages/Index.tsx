@@ -49,7 +49,7 @@ const Index = () => {
     },
     {
       name: "Standard",
-      price: "R$ 29,90",
+      price: "R$ 24,99",
       period: "/mês",
       description: "Para quem estuda regularmente",
       features: [
@@ -67,7 +67,7 @@ const Index = () => {
     },
     {
       name: "Pro",
-      price: "R$ 59,90",
+      price: "R$ 39,99",
       period: "/mês",
       badge: "7 dias grátis",
       description: "Para máximo desempenho",
