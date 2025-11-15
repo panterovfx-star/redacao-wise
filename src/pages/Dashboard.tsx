@@ -20,7 +20,15 @@ const Dashboard = () => {
   const [essays, setEssays] = useState<Tables<"essays">[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [todayCorrections, setTodayCorrections] = useState(0);
   const { status: subscriptionStatus, loading: subscriptionLoading } = useSubscription();
+
+  // Calculate today's date in Brazil timezone (UTC-3)
+  const getBrazilDate = () => {
+    const now = new Date();
+    const brazilTime = new Date(now.getTime() - (3 * 60 * 60 * 1000));
+    return brazilTime.toISOString().split('T')[0];
+  };
 
   useEffect(() => {
     // Check for checkout success/cancel
@@ -70,6 +78,17 @@ const Dashboard = () => {
       
       if (profileData) {
         setProfile(profileData);
+        
+        // Calculate corrections used today in Brazil timezone
+        const today = getBrazilDate();
+        const lastCorrectionDate = profileData.last_correction_date;
+        
+        // If the last correction was today (in Brazil timezone), show the count, otherwise 0
+        if (lastCorrectionDate === today) {
+          setTodayCorrections(profileData.daily_corrections_used || 0);
+        } else {
+          setTodayCorrections(0);
+        }
       }
 
       // Load user's essays
@@ -242,9 +261,9 @@ const Dashboard = () => {
               </p>
               {profile && (
                 <p className="text-xs text-muted-foreground mb-3">
-                  <span className="font-medium">{profile.daily_corrections_used || 0}</span> correções usadas hoje
-                  {subscriptionStatus.plan === 'free' && ` • ${Math.max(0, 1 - (profile.daily_corrections_used || 0))} restante`}
-                  {subscriptionStatus.plan === 'standard' && ` • ${Math.max(0, 10 - (profile.daily_corrections_used || 0))} restantes`}
+                  <span className="font-medium">{todayCorrections}</span> correções usadas hoje
+                  {subscriptionStatus.plan === 'free' && ` • ${Math.max(0, 1 - todayCorrections)} restante`}
+                  {subscriptionStatus.plan === 'standard' && ` • ${Math.max(0, 10 - todayCorrections)} restantes`}
                   {subscriptionStatus.plan === 'pro' && ' • ilimitadas'}
                 </p>
               )}
