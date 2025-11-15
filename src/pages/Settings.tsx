@@ -120,6 +120,17 @@ const Settings = () => {
 
   const handleSubscribe = async (planName: string, withTrial: boolean = false) => {
     const planKey = planName.toLowerCase();
+    
+    // Prevent downgrade from Pro to Standard
+    if (profile?.plan === 'pro' && planKey === 'standard') {
+      toast({
+        title: "Não é possível fazer downgrade",
+        description: "Você já possui o plano Pro. Entre em contato com o suporte para fazer downgrade.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const priceId = isYearly ? PLAN_PRICE_IDS[planKey].yearly : PLAN_PRICE_IDS[planKey].monthly;
     
     if (!priceId) {
@@ -492,10 +503,19 @@ const Settings = () => {
                       <Button
                         className="w-full"
                         variant={plan.current ? "outline" : plan.popular ? "default" : "secondary"}
-                        disabled={plan.current || plan.disabled}
+                        disabled={
+                          plan.current || 
+                          plan.disabled || 
+                          (profile?.plan === 'pro' && plan.name === 'Standard')
+                        }
                         onClick={() => !plan.current && !plan.disabled && handleSubscribe(plan.name, plan.enableTrial || false)}
                       >
-                        {plan.buttonText}
+                        {plan.current 
+                          ? plan.buttonText 
+                          : (profile?.plan === 'pro' && plan.name === 'Standard')
+                            ? "Não disponível"
+                            : plan.buttonText
+                        }
                       </Button>
                       {plan.enableTrial && !plan.current && (
                         <p className="text-xs text-center text-muted-foreground mt-2">
