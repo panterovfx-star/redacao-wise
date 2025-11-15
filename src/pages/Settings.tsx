@@ -36,8 +36,8 @@ const Settings = () => {
   };
 
   const PLAN_PRICE_IDS: Record<string, string> = {
-    standard: 'price_1SFkWeE0zB1huP7q9QnjnTq8',
-    pro: 'price_1SFkWoE0zB1huP7qh4vZSf6G'
+    standard: 'price_1STkM7E5NFVDm9roTCIwJf5W',
+    pro: 'price_1STkM8E5NFVDm9roVBCy0fxh'
   };
 
   useEffect(() => {

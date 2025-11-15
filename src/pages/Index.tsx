@@ -62,7 +62,7 @@ const Index = () => {
       cta: "Assinar Standard",
       variant: "secondary" as const,
       popular: true,
-      priceId: "price_1SFkWeE0zB1huP7q9QnjnTq8",
+      priceId: "price_1STkM7E5NFVDm9roTCIwJf5W",
       enableTrial: false,
     },
     {
@@ -82,7 +82,7 @@ const Index = () => {
       cta: "Começar Teste Grátis",
       variant: "default" as const,
       highlight: true,
-      priceId: "price_1SFkWoE0zB1huP7qh4vZSf6G",
+      priceId: "price_1STkM8E5NFVDm9roVBCy0fxh",
       enableTrial: true,
     },
   ];
