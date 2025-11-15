@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { GraduationCap, ArrowLeft, User, CreditCard, Settings as SettingsIcon, Check, Crown, Moon, Sun, Monitor } from "lucide-react";
+import { GraduationCap, ArrowLeft, User, CreditCard, Settings as SettingsIcon, Check, Crown, Moon, Sun, Monitor, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { useSubscription } from "@/hooks/use-subscription";
@@ -26,18 +26,25 @@ const Settings = () => {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [isYearly, setIsYearly] = useState(false);
   const { theme, setTheme } = useTheme();
   const { status: subscriptionStatus, createCheckout, openCustomerPortal } = useSubscription();
 
-  const PLAN_PRICES: Record<string, string> = {
-    free: "R$ 0/mês",
-    standard: "R$ 24,99/mês",
-    pro: "R$ 39,99/mês",
+  const PLAN_PRICES: Record<string, { monthly: string; yearly: string }> = {
+    free: { monthly: "R$ 0/mês", yearly: "R$ 0/ano" },
+    standard: { monthly: "R$ 24,99/mês", yearly: "R$ 18,99/mês (12x)" },
+    pro: { monthly: "R$ 39,99/mês", yearly: "R$ 32,99/mês (12x)" },
   };
 
-  const PLAN_PRICE_IDS: Record<string, string> = {
-    standard: 'price_1STkM7E5NFVDm9roTCIwJf5W',
-    pro: 'price_1STkM8E5NFVDm9roVBCy0fxh'
+  const PLAN_PRICE_IDS: Record<string, { monthly: string; yearly: string }> = {
+    standard: {
+      monthly: 'price_1STkM7E5NFVDm9roTCIwJf5W',
+      yearly: 'price_1STkZAE5NFVDm9roVr49VuX9'
+    },
+    pro: {
+      monthly: 'price_1STkM8E5NFVDm9roVBCy0fxh',
+      yearly: 'price_1STkZBE5NFVDm9roKbmraGcl'
+    }
   };
 
   useEffect(() => {
@@ -113,7 +120,7 @@ const Settings = () => {
 
   const handleSubscribe = async (planName: string, withTrial: boolean = false) => {
     const planKey = planName.toLowerCase();
-    const priceId = PLAN_PRICE_IDS[planKey];
+    const priceId = isYearly ? PLAN_PRICE_IDS[planKey].yearly : PLAN_PRICE_IDS[planKey].monthly;
     
     if (!priceId) {
       toast({
@@ -198,7 +205,8 @@ const Settings = () => {
   const plans = [
     {
       name: "Free",
-      price: "R$ 0",
+      monthlyPrice: "R$ 0",
+      yearlyPrice: "R$ 0",
       period: "/mês",
       features: [
         "1 correção por dia",
@@ -212,7 +220,8 @@ const Settings = () => {
     },
     {
       name: "Standard",
-      price: "R$ 24,99",
+      monthlyPrice: "R$ 24,99",
+      yearlyPrice: "R$ 18,99",
       period: "/mês",
       features: [
         "10 correções por dia",
@@ -230,7 +239,8 @@ const Settings = () => {
     },
     {
       name: "Pro",
-      price: "R$ 39,99",
+      monthlyPrice: "R$ 39,99",
+      yearlyPrice: "R$ 32,99",
       period: "/mês",
       badge: "7 dias grátis",
       features: [
@@ -410,68 +420,93 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="plan" className="space-y-6">
-            <Card className="p-6">
-              <h2 className="text-xl font-bold mb-2">Escolha seu Plano</h2>
-              <p className="text-muted-foreground mb-6">
-                Selecione o plano que melhor atende suas necessidades
-              </p>
+            <TabsContent value="plan" className="space-y-6">
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h2 className="text-xl font-bold">Escolha seu Plano</h2>
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="settings-billing-toggle" className={!isYearly ? "font-semibold text-sm" : "text-sm"}>
+                      Mensal
+                    </Label>
+                    <Switch
+                      id="settings-billing-toggle"
+                      checked={isYearly}
+                      onCheckedChange={setIsYearly}
+                    />
+                    <Label htmlFor="settings-billing-toggle" className={isYearly ? "font-semibold text-sm" : "text-sm"}>
+                      Anual
+                      <Badge variant="secondary" className="ml-2">-24%</Badge>
+                    </Label>
+                  </div>
+                </div>
+                <p className="text-muted-foreground mb-6">
+                  Selecione o plano que melhor atende suas necessidades
+                </p>
 
-              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-                {plans.map((plan) => (
-                  <Card 
-                    key={plan.name}
-                    className={`p-4 sm:p-6 relative ${
-                      plan.popular ? 'border-2 border-primary shadow-lg' : ''
-                    } ${plan.current ? 'bg-muted/50' : ''}`}
-                  >
-                    {plan.popular && (
-                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        Mais Popular
-                      </Badge>
-                    )}
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+                  {plans.map((plan) => {
+                    const currentPrice = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
                     
-                    <div className="text-center mb-6">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <h3 className="text-lg font-bold">{plan.name}</h3>
-                        {plan.badge && (
-                          <Badge variant="secondary" className="text-xs">
-                            {plan.badge}
-                          </Badge>
+                    return (
+                    <Card 
+                      key={plan.name}
+                      className={`p-4 sm:p-6 relative ${
+                        plan.popular ? 'border-2 border-primary shadow-lg' : ''
+                      } ${plan.current ? 'bg-muted/50' : ''}`}
+                    >
+                      {plan.popular && (
+                        <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                          Mais Popular
+                        </Badge>
+                      )}
+                      
+                      <div className="text-center mb-6">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <h3 className="text-lg font-bold">{plan.name}</h3>
+                          {plan.badge && (
+                            <Badge variant="secondary" className="text-xs">
+                              {plan.badge}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-end justify-center gap-1 mb-1">
+                          <span className="text-3xl font-bold">{currentPrice}</span>
+                          <span className="text-muted-foreground text-sm mb-1">{isYearly ? "/ano" : plan.period}</span>
+                        </div>
+                        {isYearly && plan.name !== "Free" && (
+                          <p className="text-xs text-muted-foreground">
+                            12x de {currentPrice}
+                          </p>
                         )}
                       </div>
-                      <div className="flex items-end justify-center gap-1 mb-1">
-                        <span className="text-3xl font-bold">{plan.price}</span>
-                        <span className="text-muted-foreground text-sm mb-1">{plan.period}</span>
-                      </div>
-                    </div>
 
-                    <ul className="space-y-3 mb-6">
-                      {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm">
-                          <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
+                      <ul className="space-y-3 mb-6">
+                        {plan.features.map((feature, index) => (
+                          <li key={index} className="flex items-start gap-2 text-sm">
+                            <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
 
-                    <Button
-                      className="w-full"
-                      variant={plan.current ? "outline" : plan.popular ? "default" : "secondary"}
-                      disabled={plan.current || plan.disabled}
-                      onClick={() => !plan.current && !plan.disabled && handleSubscribe(plan.name, plan.enableTrial || false)}
-                    >
-                      {plan.buttonText}
-                    </Button>
-                    {plan.enableTrial && !plan.current && (
-                      <p className="text-xs text-center text-muted-foreground mt-2">
-                        Cancele a qualquer momento durante o período de teste
-                      </p>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            </Card>
+                      <Button
+                        className="w-full"
+                        variant={plan.current ? "outline" : plan.popular ? "default" : "secondary"}
+                        disabled={plan.current || plan.disabled}
+                        onClick={() => !plan.current && !plan.disabled && handleSubscribe(plan.name, plan.enableTrial || false)}
+                      >
+                        {plan.buttonText}
+                      </Button>
+                      {plan.enableTrial && !plan.current && (
+                        <p className="text-xs text-center text-muted-foreground mt-2">
+                          Cancele a qualquer momento durante o período de teste
+                        </p>
+                      )}
+                    </Card>
+                  );
+                  })}
+                </div>
+              </Card>
 
             <Card className="p-6">
               <h3 className="font-semibold mb-4">Informações de Pagamento</h3>
