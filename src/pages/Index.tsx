@@ -1,13 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GraduationCap, Check, Zap, Crown, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [isYearly, setIsYearly] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -33,7 +36,8 @@ const Index = () => {
   const plans = [
     {
       name: "Gratuito",
-      price: "R$ 0",
+      monthlyPrice: "R$ 0",
+      yearlyPrice: "R$ 0",
       period: "/mês",
       description: "Perfeito para testar",
       features: [
@@ -44,12 +48,14 @@ const Index = () => {
       icon: Check,
       cta: "Começar Grátis",
       variant: "outline" as const,
-      priceId: null,
+      monthlyPriceId: null,
+      yearlyPriceId: null,
       enableTrial: false,
     },
     {
       name: "Standard",
-      price: "R$ 24,99",
+      monthlyPrice: "R$ 24,99",
+      yearlyPrice: "R$ 18,99",
       period: "/mês",
       description: "Para quem estuda regularmente",
       features: [
@@ -62,12 +68,14 @@ const Index = () => {
       cta: "Assinar Standard",
       variant: "secondary" as const,
       popular: true,
-      priceId: "price_1STkM7E5NFVDm9roTCIwJf5W",
+      monthlyPriceId: "price_1STkM7E5NFVDm9roTCIwJf5W",
+      yearlyPriceId: "price_1STkZAE5NFVDm9roVr49VuX9",
       enableTrial: false,
     },
     {
       name: "Pro",
-      price: "R$ 39,99",
+      monthlyPrice: "R$ 39,99",
+      yearlyPrice: "R$ 32,99",
       period: "/mês",
       badge: "7 dias grátis",
       description: "Para máximo desempenho",
@@ -82,7 +90,8 @@ const Index = () => {
       cta: "Começar Teste Grátis",
       variant: "default" as const,
       highlight: true,
-      priceId: "price_1STkM8E5NFVDm9roVBCy0fxh",
+      monthlyPriceId: "price_1STkM8E5NFVDm9roVBCy0fxh",
+      yearlyPriceId: "price_1STkZBE5NFVDm9roKbmraGcl",
       enableTrial: true,
     },
   ];
@@ -180,19 +189,38 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="planos" className="container mx-auto px-4 py-20">
+      {/* Pricing Section */}
+      <section className="container mx-auto px-4 py-20">
         <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-hero bg-clip-text text-transparent">
             Escolha seu plano
           </h2>
-          <p className="text-xl text-muted-foreground">
-            Comece grátis e faça upgrade quando precisar
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Do iniciante ao expert, temos o plano perfeito para você
           </p>
+          
+          <div className="flex items-center justify-center gap-3 mt-8">
+            <Label htmlFor="billing-toggle" className={!isYearly ? "font-semibold" : ""}>
+              Mensal
+            </Label>
+            <Switch
+              id="billing-toggle"
+              checked={isYearly}
+              onCheckedChange={setIsYearly}
+            />
+            <Label htmlFor="billing-toggle" className={isYearly ? "font-semibold" : ""}>
+              Anual
+              <Badge variant="secondary" className="ml-2">Economize até 24%</Badge>
+            </Label>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan) => (
+          {plans.map((plan) => {
+            const currentPrice = isYearly ? plan.yearlyPrice : plan.monthlyPrice;
+            const currentPriceId = isYearly ? plan.yearlyPriceId : plan.monthlyPriceId;
+            
+            return (
             <Card
               key={plan.name}
               className={`p-8 relative ${
@@ -223,16 +251,21 @@ const Index = () => {
                   {plan.description}
                 </p>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground">{plan.period}</span>
+                  <span className="text-4xl font-bold">{currentPrice}</span>
+                  <span className="text-muted-foreground">{isYearly ? "/ano" : plan.period}</span>
                 </div>
+                {isYearly && plan.name !== "Gratuito" && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    12x de {currentPrice}
+                  </p>
+                )}
               </div>
 
               <ul className="space-y-3 mb-8">
                 {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2">
-                    <Check className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature}</span>
+                  <li key={feature} className="flex items-start gap-2 text-sm">
+                    <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                    <span>{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -241,12 +274,20 @@ const Index = () => {
                 className="w-full"
                 variant={plan.variant}
                 size="lg"
-                onClick={() => navigate("/auth")}
+                onClick={() => {
+                  if (currentPriceId) {
+                    navigate("/auth");
+                  } else {
+                    navigate("/auth");
+                  }
+                }}
               >
                 {plan.cta}
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Card>
-          ))}
+          );
+          })}
         </div>
       </section>
 
