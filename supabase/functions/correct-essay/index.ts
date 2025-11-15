@@ -74,10 +74,18 @@ serve(async (req) => {
       });
     }
 
-    // Reset counter if new day
-    const today = new Date().toISOString().split('T')[0];
+    // Get current date in Brazil timezone (UTC-3)
+    const getBrazilDate = () => {
+      const now = new Date();
+      // Convert to UTC-3 (Brazil timezone)
+      const brazilTime = new Date(now.getTime() - (3 * 60 * 60 * 1000));
+      return brazilTime.toISOString().split('T')[0];
+    };
+
+    // Reset counter if new day in Brazil timezone
+    const today = getBrazilDate();
     const lastCorrectionDate = profile.last_correction_date;
-    let correctionsUsed = profile.daily_corrections_used;
+    let correctionsUsed = profile.daily_corrections_used || 0;
 
     if (lastCorrectionDate !== today) {
       correctionsUsed = 0;
