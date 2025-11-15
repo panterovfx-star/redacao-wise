@@ -31,8 +31,8 @@ const Settings = () => {
 
   const PLAN_PRICES: Record<string, string> = {
     free: "R$ 0/mês",
-    standard: "R$ 29,90/mês",
-    pro: "R$ 59,90/mês",
+    standard: "R$ 24,99/mês",
+    pro: "R$ 39,99/mês",
   };
 
   const PLAN_PRICE_IDS: Record<string, string> = {
