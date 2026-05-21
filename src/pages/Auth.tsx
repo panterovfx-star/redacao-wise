@@ -58,6 +58,12 @@ const Auth = () => {
             providers={[]}
             redirectTo={`${window.location.origin}/dashboard`}
           />
+          <p className="text-xs text-muted-foreground text-center mt-4">
+            Ao continuar, você concorda com nossos{" "}
+            <a href="/termos" className="underline hover:text-foreground">Termos de Uso</a>
+            {" "}e{" "}
+            <a href="/privacidade" className="underline hover:text-foreground">Política de Privacidade</a>.
+          </p>
         </div>
       </div>
     </div>
