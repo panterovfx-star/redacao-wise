@@ -258,7 +258,58 @@ Retorne APENAS JSON válido:
 }`
     };
 
-    const systemPrompt = systemPrompts[essayType as keyof typeof systemPrompts];
+    let systemPrompt = systemPrompts[essayType as keyof typeof systemPrompts];
+
+    // Fetch admin training feedback to calibrate the AI
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { data: trainingFeedback } = await serviceClient
+      .from('ai_training_feedback')
+      .select('original_score, corrected_score, feedback_notes, essays:essay_id(essay_type, content, theme)')
+      .order('created_at', { ascending: false })
+      .limit(15);
+
+    const relevantFeedback = (trainingFeedback || []).filter(
+      (f: any) => f.essays?.essay_type === essayType
+    );
+
+    if (relevantFeedback.length > 0) {
+      const examplesText = relevantFeedback.slice(0, 8).map((f: any, idx: number) => {
+        const excerpt = (f.essays?.content || '').slice(0, 400);
+        return `Exemplo ${idx + 1}:
+- Nota original da IA: ${f.original_score}
+- Nota correta (ajustada pelo admin): ${f.corrected_score}
+- Diferença: ${f.corrected_score - f.original_score} pontos
+${f.feedback_notes ? `- Observações do corretor humano: ${f.feedback_notes}` : ''}
+${f.essays?.theme ? `- Tema: ${f.essays.theme}` : ''}
+- Trecho da redação: "${excerpt}${(f.essays?.content || '').length > 400 ? '...' : ''}"`;
+      }).join('\n\n');
+
+      const avgDiff = relevantFeedback.reduce((sum: number, f: any) => sum + (f.corrected_score - f.original_score), 0) / relevantFeedback.length;
+      const trend = avgDiff > 10 ? 'tem subestimado' : avgDiff < -10 ? 'tem superestimado' : 'tem avaliado de forma equilibrada';
+
+      systemPrompt += `
+
+═══════════════════════════════════════
+CALIBRAÇÃO BASEADA EM TREINAMENTO HUMANO (MUITO IMPORTANTE):
+═══════════════════════════════════════
+
+Com base em ${relevantFeedback.length} correções revisadas por administradores humanos especialistas, observou-se que a IA ${trend} as redações (diferença média: ${avgDiff.toFixed(1)} pontos).
+
+AJUSTE SUA AVALIAÇÃO considerando os exemplos reais abaixo de correções que precisaram ser corrigidas por humanos:
+
+${examplesText}
+
+INSTRUÇÕES CRÍTICAS:
+- Use estes exemplos como referência de calibração
+- Se a IA tem subestimado, seja mais generoso ao reconhecer méritos
+- Se a IA tem superestimado, seja mais rigoroso nos critérios
+- Aplique as observações dos corretores humanos em casos semelhantes
+- Esta calibração tem PRIORIDADE sobre suas avaliações iniciais`;
+    }
 
     // Call Lovable AI
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -280,6 +331,7 @@ Retorne APENAS JSON válido:
               : `Corrija a seguinte redação:\n\n${essayContent}`
           }
         ],
+        max_tokens: 8192,
       }),
     });
 
