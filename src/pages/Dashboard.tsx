@@ -10,6 +10,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { Badge } from "@/components/ui/badge";
 import { InsightsPanel } from "@/components/InsightsPanel";
 import { PracticeThemeGenerator } from "@/components/PracticeThemeGenerator";
+import { trackPurchase } from "@/lib/fbpixel";
 
 const Dashboard = () => {
   const navigate = useNavigate();
