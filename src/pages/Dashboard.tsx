@@ -39,6 +39,8 @@ const Dashboard = () => {
         title: "Assinatura realizada!",
         description: "Seu pagamento foi processado com sucesso. Aproveite seu novo plano!",
       });
+      // Dispara evento Purchase no Meta Pixel
+      trackPurchase();
       // Remove query param
       setSearchParams({});
     } else if (checkoutStatus === 'canceled') {
