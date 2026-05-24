@@ -10,6 +10,7 @@ import { useSubscription } from "@/hooks/use-subscription";
 import { Badge } from "@/components/ui/badge";
 import { InsightsPanel } from "@/components/InsightsPanel";
 import { PracticeThemeGenerator } from "@/components/PracticeThemeGenerator";
+import { trackPurchase } from "@/lib/fbpixel";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -38,6 +39,8 @@ const Dashboard = () => {
         title: "Assinatura realizada!",
         description: "Seu pagamento foi processado com sucesso. Aproveite seu novo plano!",
       });
+      // Dispara evento Purchase no Meta Pixel
+      trackPurchase();
       // Remove query param
       setSearchParams({});
     } else if (checkoutStatus === 'canceled') {

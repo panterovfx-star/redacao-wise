@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { GraduationCap } from "lucide-react";
+import { trackSignUp } from "@/lib/fbpixel";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -17,8 +18,19 @@ const Auth = () => {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
+        // Detecta cadastro novo: created_at ~ last_sign_in_at (diferença < 60s)
+        const user = session.user;
+        if (event === "SIGNED_IN" && user?.created_at && user?.last_sign_in_at) {
+          const diff = Math.abs(
+            new Date(user.last_sign_in_at).getTime() -
+              new Date(user.created_at).getTime()
+          );
+          if (diff < 60_000) {
+            trackSignUp();
+          }
+        }
         navigate("/dashboard");
       }
     });
